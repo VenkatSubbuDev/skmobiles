@@ -9,6 +9,8 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import MainLayout from "@/components/layout/MainLayout";
 import Index from "./pages/Index";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -36,6 +38,9 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route element={<MainLayout />}>
                     <Route path="/" element={<Index />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/product/:slug" element={<ProductDetail />} />
+                    <Route path="/category/:slug" element={<Products />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminLayout />}>
