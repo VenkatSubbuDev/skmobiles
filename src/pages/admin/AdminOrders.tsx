@@ -27,7 +27,7 @@ export default function AdminOrders() {
 
   const fetchOrders = async () => {
     const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    setOrders((data || []) as Order[]);
+    setOrders((data || []) as unknown as Order[]);
     setLoading(false);
   };
 
