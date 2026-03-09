@@ -57,7 +57,7 @@ export default function ProductDetail() {
 
       const [relatedRes, reviewsRes] = await Promise.all([
         supabase.from('products').select('*, category:categories(*)').eq('category_id', prod.category_id!).neq('id', prod.id).eq('is_active', true).limit(4),
-        supabase.from('reviews').select('*, profile:profiles(*)').eq('product_id', prod.id).order('created_at', { ascending: false }),
+        supabase.from('reviews').select('*').eq('product_id', prod.id).order('created_at', { ascending: false }),
       ]);
 
       setRelatedProducts((relatedRes.data || []) as Product[]);

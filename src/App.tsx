@@ -9,6 +9,8 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import MainLayout from "@/components/layout/MainLayout";
 import Index from "./pages/Index";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
