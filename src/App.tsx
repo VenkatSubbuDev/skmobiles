@@ -11,6 +11,14 @@ import MainLayout from "@/components/layout/MainLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminStockAlerts from "./pages/admin/AdminStockAlerts";
+import AdminCustomers from "./pages/admin/AdminCustomers";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +36,15 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route element={<MainLayout />}>
                     <Route path="/" element={<Index />} />
+                  </Route>
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="categories" element={<AdminCategories />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="stock-alerts" element={<AdminStockAlerts />} />
+                    <Route path="customers" element={<AdminCustomers />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
