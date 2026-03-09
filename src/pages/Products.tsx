@@ -18,11 +18,12 @@ type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-az' | 'name-za' 
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { slug: categorySlug } = useParams<{ slug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+  const [selectedCategory, setSelectedCategory] = useState(categorySlug || searchParams.get('category') || 'all');
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
   const [maxPrice, setMaxPrice] = useState(200000);
