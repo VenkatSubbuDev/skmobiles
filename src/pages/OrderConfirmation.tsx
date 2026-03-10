@@ -53,7 +53,7 @@ export default function OrderConfirmation() {
     );
   }
 
-  const shippingAddr = order.shipping_address as Record<string, string> | null;
+  const shippingAddr = order.shipping_address as unknown as Record<string, string> | null;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">

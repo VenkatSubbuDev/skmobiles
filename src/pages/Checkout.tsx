@@ -130,17 +130,18 @@ export default function Checkout() {
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
+      .insert([{
         user_id: user!.id,
+        order_number: 'TEMP',
         subtotal,
         shipping_cost: shippingCost,
         total,
         delivery_method: deliveryMethod,
-        shipping_address: shippingAddr,
+        shipping_address: shippingAddr as any,
         notes: notes || null,
-        status: 'pending',
+        status: 'pending' as const,
         payment_status: 'pending',
-      })
+      }])
       .select()
       .single();
 
