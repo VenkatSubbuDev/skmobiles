@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Auth from "./pages/Auth";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -41,6 +42,7 @@ const App = () => (
                     <Route path="/products" element={<Products />} />
                     <Route path="/product/:slug" element={<ProductDetail />} />
                     <Route path="/category/:slug" element={<Products />} />
+                    <Route path="/account" element={<Account />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminLayout />}>
