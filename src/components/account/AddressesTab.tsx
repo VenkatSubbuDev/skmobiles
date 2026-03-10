@@ -147,5 +147,3 @@ export default function AddressesTab() {
   );
 }
 
-// Need Badge import
-import { Badge } from '@/components/ui/badge';

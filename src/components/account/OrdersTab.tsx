@@ -33,7 +33,7 @@ export default function OrdersTab() {
       .eq('user_id', user!.id)
       .order('created_at', { ascending: false });
 
-    setOrders((data as Order[]) || []);
+    setOrders((data as unknown as Order[]) || []);
     setLoading(false);
   };
 
