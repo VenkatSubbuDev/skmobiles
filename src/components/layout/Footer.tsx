@@ -52,7 +52,7 @@ export default function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4">
               <Smartphone className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold gradient-text">skmobiles</span>
+              <span className="text-xl font-bold gradient-text">SK Mobiles</span>
             </Link>
             <p className="text-muted-foreground mb-4">
               Your one-stop destination for premium mobile accessories. Quality products, unbeatable prices.
@@ -113,15 +113,15 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-muted-foreground">
                 <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <span>123 Tech Street, Mobile City, India 500001</span>
+                <span>Yallur Vi, Mainroad, Gospadu Mandal, Nandyal Dist, Andhra Pradesh, India - 518501</span>
               </li>
               <li className="flex items-center gap-3 text-muted-foreground">
                 <Phone className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>+91 9876543210</span>
+                <span>+91 99892 99892</span>
               </li>
               <li className="flex items-center gap-3 text-muted-foreground">
                 <Mail className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>support@skmobiles.com</span>
+                <span>Skmobiles@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -132,7 +132,7 @@ export default function Footer() {
       <div className="border-t border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2024 skmobiles. All rights reserved.</p>
+            <p>&copy; 2025 SK Mobiles. All rights reserved.</p>
             <div className="flex items-center gap-4">
               <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
