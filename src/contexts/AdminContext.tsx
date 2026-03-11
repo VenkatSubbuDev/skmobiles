@@ -1,39 +1,54 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminContextType {
   isAdminAuthenticated: boolean;
-  adminLogin: (username: string, password: string) => boolean;
-  adminLogout: () => void;
+  isLoading: boolean;
+  adminLogout: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-// Static admin credentials as specified
-const ADMIN_USERNAME = 'Venkat';
-const ADMIN_PASSWORD = 'Subbu@9502';
-
 export function AdminProvider({ children }: { children: ReactNode }) {
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    // Check session storage for admin auth state
-    return sessionStorage.getItem('admin_authenticated') === 'true';
-  });
+  const { user, loading: authLoading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const adminLogin = (username: string, password: string): boolean => {
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      setIsAdminAuthenticated(true);
-      sessionStorage.setItem('admin_authenticated', 'true');
-      return true;
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      });
+
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(!!data);
+      }
+      setIsLoading(false);
+    };
+
+    if (!authLoading) {
+      checkAdminRole();
     }
-    return false;
-  };
+  }, [user, authLoading]);
 
-  const adminLogout = () => {
-    setIsAdminAuthenticated(false);
-    sessionStorage.removeItem('admin_authenticated');
+  const adminLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAdmin(false);
   };
 
   return (
-    <AdminContext.Provider value={{ isAdminAuthenticated, adminLogin, adminLogout }}>
+    <AdminContext.Provider value={{ isAdminAuthenticated: isAdmin, isLoading, adminLogout }}>
       {children}
     </AdminContext.Provider>
   );
