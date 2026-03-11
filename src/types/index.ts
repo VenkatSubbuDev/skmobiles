@@ -6,8 +6,10 @@ export interface Category {
   icon: string | null;
   image_url: string | null;
   is_active: boolean;
+  parent_id: string | null;
   created_at: string;
   updated_at: string;
+  children?: Category[];
 }
 
 export interface Product {
