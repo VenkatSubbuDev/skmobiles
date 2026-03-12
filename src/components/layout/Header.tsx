@@ -92,7 +92,12 @@ export default function Header() {
             }>
               Products
             </NavLink>
-            {categories.slice(0, 3).map((cat) => (
+            <NavLink to="/custom-case" className={({ isActive }) => 
+              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
+            }>
+              Custom Case
+            </NavLink>
+            {categories.slice(0, 2).map((cat) => (
               <NavLink 
                 key={cat.slug}
                 to={`/category/${cat.slug}`}
