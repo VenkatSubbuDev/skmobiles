@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle, Smartphone, Palette } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useNavigate } from 'react-router-dom';
