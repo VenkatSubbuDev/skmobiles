@@ -29,7 +29,6 @@ export default function About() {
             <li>Dedicated customer support</li>
           </ul>
         </div>
-      </div>
     </div>
   );
 }
