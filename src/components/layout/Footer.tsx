@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Smartphone, Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -96,12 +96,14 @@ export default function Footer() {
             <ul className="space-y-2">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <Link 
+                  <NavLink 
                     to={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className={({ isActive }) => 
+                      `hover:text-primary transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`
+                    }
                   >
                     {link.name}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -134,9 +136,15 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>© 2024 skmobiles. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
-              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
-              <Link to="/cookies" className="hover:text-primary transition-colors">Cookies</Link>
+              <NavLink to="/terms" className={({ isActive }) => 
+                `hover:text-primary transition-colors ${isActive ? 'text-primary' : ''}`
+              }>Terms</NavLink>
+              <NavLink to="/privacy" className={({ isActive }) => 
+                `hover:text-primary transition-colors ${isActive ? 'text-primary' : ''}`
+              }>Privacy</NavLink>
+              <NavLink to="/cookies" className={({ isActive }) => 
+                `hover:text-primary transition-colors ${isActive ? 'text-primary' : ''}`
+              }>Cookies</NavLink>
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ import { useWishlist } from '@/contexts/WishlistContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import usePageMeta from '@/hooks/usePageMeta';
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,6 +29,12 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewComment, setReviewComment] = useState('');
+
+  // Update page meta when product is loaded
+  usePageMeta({ 
+    title: product?.name || 'Product Details',
+    description: product?.description?.slice(0, 160) || 'Product details'
+  });
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
 

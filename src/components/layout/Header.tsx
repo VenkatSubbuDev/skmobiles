@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { Search, ShoppingCart, Heart, User, Menu, X, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -49,17 +49,23 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 bg-card border-border">
               <nav className="flex flex-col gap-4 mt-8">
-                <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">Home</Link>
-                <Link to="/products" className="text-lg font-medium hover:text-primary transition-colors">All Products</Link>
+                <NavLink to="/" className={({ isActive }) => 
+                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
+                }>Home</NavLink>
+                <NavLink to="/products" className={({ isActive }) => 
+                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
+                }>All Products</NavLink>
                 <div className="border-t border-border my-2" />
                 {categories.map((cat) => (
-                  <Link 
+                  <NavLink 
                     key={cat.slug}
                     to={`/category/${cat.slug}`}
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className={({ isActive }) => 
+                      `transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`
+                    }
                   >
                     {cat.name}
-                  </Link>
+                  </NavLink>
                 ))}
               </nav>
             </SheetContent>
@@ -76,20 +82,26 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="/" className="hover-underline text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <NavLink to="/" className={({ isActive }) => 
+              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
+            }>
               Home
-            </Link>
-            <Link to="/products" className="hover-underline text-sm font-medium text-foreground hover:text-primary transition-colors">
+            </NavLink>
+            <NavLink to="/products" className={({ isActive }) => 
+              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
+            }>
               Products
-            </Link>
+            </NavLink>
             {categories.slice(0, 3).map((cat) => (
-              <Link 
+              <NavLink 
                 key={cat.slug}
                 to={`/category/${cat.slug}`}
-                className="hover-underline text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                className={({ isActive }) => 
+                  `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-primary'}`
+                }
               >
                 {cat.name}
-              </Link>
+              </NavLink>
             ))}
           </nav>
 

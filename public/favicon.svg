@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="32" fill="#7C3AED"/>
+  <!-- Smartphone body -->
+  <rect x="20" y="10" width="24" height="40" rx="4" ry="4" fill="white" opacity="0.15"/>
+  <rect x="21" y="11" width="22" height="38" rx="3" ry="3" fill="white" opacity="0.1"/>
+  <!-- Screen bezel -->
+  <rect x="22" y="15" width="20" height="28" rx="2" ry="2" fill="#1e1030"/>
+  <!-- Screen glow -->
+  <rect x="23" y="16" width="18" height="26" rx="1.5" ry="1.5" fill="#6D28D9" opacity="0.6"/>
+  <!-- SK text on screen -->
+  <text x="32" y="32" font-family="Arial, sans-serif" font-weight="900" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle">SK</text>
+  <!-- Home button -->
+  <circle cx="32" cy="46" r="2" fill="white" opacity="0.6"/>
+  <!-- Speaker grill -->
+  <rect x="28" y="12.5" width="8" height="1.5" rx="0.75" fill="white" opacity="0.4"/>
+  <!-- Neon glow effect -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#A78BFA" stroke-width="1.5" opacity="0.5"/>
+</svg>

@@ -12,12 +12,19 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import ProductCard from '@/components/product/ProductCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, Category } from '@/types';
+import usePageMeta from '@/hooks/usePageMeta';
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'name-az' | 'name-za' | 'featured';
 
 export default function Products() {
   const [searchParams] = useSearchParams();
   const { slug: categorySlug } = useParams<{ slug: string }>();
+  
+  // Dynamic page title based on category
+  const pageTitle = categorySlug 
+    ? categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1)
+    : 'All Products';
+  usePageMeta({ title: pageTitle });
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
