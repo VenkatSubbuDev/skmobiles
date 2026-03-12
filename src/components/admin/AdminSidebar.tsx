@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle, Smartphone, Palette } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
+  { title: 'Brands & Models', url: '/admin/brands', icon: Smartphone },
+  { title: 'Case Orders', url: '/admin/case-orders', icon: Palette },
   { title: 'Products', url: '/admin/products', icon: Package },
   { title: 'Categories', url: '/admin/categories', icon: FolderTree },
   { title: 'Orders', url: '/admin/orders', icon: ShoppingCart },

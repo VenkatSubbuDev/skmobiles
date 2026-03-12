@@ -34,6 +34,9 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminStockAlerts from "./pages/admin/AdminStockAlerts";
 import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminBrands from "./pages/admin/AdminBrands";
+import AdminCaseOrders from "./pages/admin/AdminCaseOrders";
+import CustomCase from "./pages/CustomCase";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +70,7 @@ const App = () => (
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/cookies" element={<Cookies />} />
+                    <Route path="/custom-case" element={<CustomCase />} />
                   </Route>
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminLayout />}>
@@ -76,6 +80,8 @@ const App = () => (
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="stock-alerts" element={<AdminStockAlerts />} />
                     <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="brands" element={<AdminBrands />} />
+                    <Route path="case-orders" element={<AdminCaseOrders />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
