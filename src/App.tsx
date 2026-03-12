@@ -80,6 +80,8 @@ const App = () => (
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="stock-alerts" element={<AdminStockAlerts />} />
                     <Route path="customers" element={<AdminCustomers />} />
+                    <Route path="brands" element={<AdminBrands />} />
+                    <Route path="case-orders" element={<AdminCaseOrders />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
