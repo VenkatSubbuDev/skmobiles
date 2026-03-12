@@ -49,7 +49,7 @@ const App = () => (
             <AdminProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter basename="/skmobiles">
+              <BrowserRouter>
                 <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route element={<MainLayout />}>
