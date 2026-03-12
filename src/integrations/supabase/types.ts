@@ -171,6 +171,143 @@ export type Database = {
           },
         ]
       }
+      custom_case_orders: {
+        Row: {
+          brand_id: string
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          image_url: string
+          model_id: string
+          notes: string | null
+          order_number: string
+          price: number
+          quantity: number | null
+          shipping_address: string
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          image_url: string
+          model_id: string
+          notes?: string | null
+          order_number: string
+          price?: number
+          quantity?: number | null
+          shipping_address: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          image_url?: string
+          model_id?: string
+          notes?: string | null
+          order_number?: string
+          price?: number
+          quantity?: number | null
+          shipping_address?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_case_orders_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "mobile_brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_case_orders_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "mobile_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobile_brands: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      mobile_models: {
+        Row: {
+          brand_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobile_models_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "mobile_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
