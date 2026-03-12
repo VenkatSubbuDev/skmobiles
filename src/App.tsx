@@ -34,6 +34,9 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminStockAlerts from "./pages/admin/AdminStockAlerts";
 import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminBrands from "./pages/admin/AdminBrands";
+import AdminCaseOrders from "./pages/admin/AdminCaseOrders";
+import CustomCase from "./pages/CustomCase";
 
 const queryClient = new QueryClient();
 
