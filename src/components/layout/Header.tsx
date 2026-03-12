@@ -55,6 +55,9 @@ export default function Header() {
                 <NavLink to="/products" className={({ isActive }) => 
                   `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
                 }>All Products</NavLink>
+                <NavLink to="/custom-case" className={({ isActive }) => 
+                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
+                }>🎨 Custom Case</NavLink>
                 <div className="border-t border-border my-2" />
                 {categories.map((cat) => (
                   <NavLink 
