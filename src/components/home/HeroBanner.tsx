@@ -115,7 +115,7 @@ export default function HeroBanner() {
                   </Button>
                 </div>
                 {/* Price callout */}
-                {index === 0 && (
+                {slides[currentSlide].showPrice && (
                   <div className="mt-6 flex items-center gap-3 animate-fade-up" style={{ animationDelay: '0.4s' }}>
                     <span className="text-3xl font-bold text-primary">₹199</span>
                     <span className="text-lg text-muted-foreground line-through">₹249</span>
