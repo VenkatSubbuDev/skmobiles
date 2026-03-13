@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import heroCaseImg from '@/assets/hero-custom-case.png';
+import heroEarbudsImg from '@/assets/hero-earbuds.png';
+import heroCasesCollectionImg from '@/assets/hero-custom-cases-collection.png';
 
 const slides = [
   {
@@ -15,26 +17,35 @@ const slides = [
     ctaLink: '/custom-case',
     secondaryCta: 'View All Products',
     secondaryLink: '/products',
+    image: heroCaseImg,
+    imageAlt: 'Custom printed unbreakable phone case',
+    showPrice: true,
   },
   {
     id: '2',
-    badge: '✨ Premium Quality',
-    title: 'Your Photo, Your Case',
-    subtitle: 'HD print quality on military-grade protection. Choose from 500+ phone models. Cash on delivery available.',
-    cta: 'Create Now',
-    ctaLink: '/custom-case',
-    secondaryCta: 'Browse Products',
+    badge: '🎧 New Arrivals',
+    title: 'Premium Wireless Earbuds',
+    subtitle: 'Crystal-clear sound with deep bass. Up to 36hrs battery life, IPX5 waterproof, and ultra-low latency for gaming. Starting from ₹299.',
+    cta: 'Shop Earbuds',
+    ctaLink: '/products',
+    secondaryCta: 'View All',
     secondaryLink: '/products',
+    image: heroEarbudsImg,
+    imageAlt: 'Premium wireless earbuds with charging case',
+    showPrice: false,
   },
   {
     id: '3',
-    badge: '🎁 Perfect Gift Idea',
-    title: 'Gift a Custom Case',
-    subtitle: "Surprise someone with a phone case featuring their favorite photo. The perfect personal gift for any occasion!",
-    cta: 'Start Designing',
+    badge: '✨ 500+ Designs Available',
+    title: 'Cases That Tell Your Story',
+    subtitle: 'From celebrity prints to stunning landscapes — our HD quality custom cases are unbreakable and uniquely yours. Cash on delivery available!',
+    cta: 'Explore Collection',
     ctaLink: '/custom-case',
-    secondaryCta: 'Learn More',
-    secondaryLink: '/about',
+    secondaryCta: 'Browse All',
+    secondaryLink: '/products',
+    image: heroCasesCollectionImg,
+    imageAlt: 'Collection of custom printed phone cases with vibrant designs',
+    showPrice: false,
   },
 ];
 
@@ -104,7 +115,7 @@ export default function HeroBanner() {
                   </Button>
                 </div>
                 {/* Price callout */}
-                {index === 0 && (
+                {slides[currentSlide].showPrice && (
                   <div className="mt-6 flex items-center gap-3 animate-fade-up" style={{ animationDelay: '0.4s' }}>
                     <span className="text-3xl font-bold text-primary">₹199</span>
                     <span className="text-lg text-muted-foreground line-through">₹249</span>
@@ -120,8 +131,8 @@ export default function HeroBanner() {
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75 animate-glow" />
               <img
-                src={heroCaseImg}
-                alt="Custom printed unbreakable phone case"
+                src={slides[currentSlide].image}
+                alt={slides[currentSlide].imageAlt}
                 className="relative z-10 w-64 md:w-80 lg:w-96 drop-shadow-2xl hover:scale-105 transition-transform duration-500"
               />
             </div>
