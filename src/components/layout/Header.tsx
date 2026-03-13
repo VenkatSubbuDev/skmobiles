@@ -58,18 +58,6 @@ export default function Header() {
                 <NavLink to="/custom-case" className={({ isActive }) => 
                   `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
                 }>🎨 Custom Case</NavLink>
-                <div className="border-t border-border my-2" />
-                {categories.map((cat) => (
-                  <NavLink 
-                    key={cat.slug}
-                    to={`/category/${cat.slug}`}
-                    className={({ isActive }) => 
-                      `transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`
-                    }
-                  >
-                    {cat.name}
-                  </NavLink>
-                ))}
               </nav>
             </SheetContent>
           </Sheet>
@@ -100,17 +88,6 @@ export default function Header() {
             }>
               Custom Case
             </NavLink>
-            {categories.slice(0, 2).map((cat) => (
-              <NavLink 
-                key={cat.slug}
-                to={`/category/${cat.slug}`}
-                className={({ isActive }) => 
-                  `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-primary'}`
-                }
-              >
-                {cat.name}
-              </NavLink>
-            ))}
           </nav>
 
           {/* Right Actions */}
