@@ -131,8 +131,8 @@ export default function HeroBanner() {
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl scale-75 animate-glow" />
               <img
-                src={heroCaseImg}
-                alt="Custom printed unbreakable phone case"
+                src={slides[currentSlide].image}
+                alt={slides[currentSlide].imageAlt}
                 className="relative z-10 w-64 md:w-80 lg:w-96 drop-shadow-2xl hover:scale-105 transition-transform duration-500"
               />
             </div>
