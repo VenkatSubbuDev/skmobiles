@@ -127,10 +127,10 @@ export default function HeroBanner() {
       <section className="relative overflow-hidden bg-card/30 rounded-3xl shadow-2xl">
         {/* Background Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-card/50 to-background/80 mix-blend-overlay" />
-        
+
         {/* Animated Grid */}
         <div className="absolute inset-0 opacity-10">
-          <div 
+          <div
             className="absolute inset-0"
             style={{
               backgroundImage: 'linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)',
@@ -149,13 +149,13 @@ export default function HeroBanner() {
             {slides.map((slide) => (
               <div key={slide.id} className="flex-[0_0_100%] min-w-0 relative">
                 <div className="px-10 sm:px-16 lg:px-24 py-8 md:py-12 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center min-h-[400px] md:min-h-[450px]">
-                  
+
                   {/* Text Side */}
                   <div className="flex flex-col justify-center order-2 lg:order-1 relative z-10 animate-fade-up max-w-xl mx-auto lg:mx-0">
                     <Badge className="w-fit mb-4 bg-primary/10 text-primary border-primary/20 text-xs px-3 py-1 backdrop-blur-sm">
                       {slide.badge}
                     </Badge>
-                    
+
                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight tracking-tight">
                       {slide.titleGradient ? (
                         <span className="gradient-text">{slide.title}</span>
@@ -166,11 +166,11 @@ export default function HeroBanner() {
                         </>
                       )}
                     </h1>
-                    
+
                     <p className="text-base md:text-lg text-muted-foreground/90 mb-6 leading-relaxed">
                       {slide.subtitle}
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button asChild size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground neon-glow px-6 font-semibold rounded-full">
                         <Link to={slide.ctaLink}>{slide.cta}</Link>
@@ -179,7 +179,7 @@ export default function HeroBanner() {
                         <Link to={slide.secondaryLink}>{slide.secondaryCta}</Link>
                       </Button>
                     </div>
-                    
+
                     {/* Optional Price callout */}
                     {slide.showPrice && (
                       <div className="mt-6 flex items-center gap-3 bg-background/40 w-fit px-4 py-2 rounded-xl border border-white/5 backdrop-blur-md">
@@ -208,21 +208,21 @@ export default function HeroBanner() {
 
         {/* Navigation Controls */}
         <div className="absolute top-1/2 -translate-y-1/2 left-4 z-20 hidden md:flex">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/10 hover:bg-primary/20 hover:border-primary/50 transition-all text-white shadow-lg" 
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/10 hover:bg-primary/20 hover:border-primary/50 transition-all text-white shadow-lg"
             onClick={scrollPrev}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
         </div>
-        
+
         <div className="absolute top-1/2 -translate-y-1/2 right-4 z-20 hidden md:flex">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/10 hover:bg-primary/20 hover:border-primary/50 transition-all text-white shadow-lg" 
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-background/50 backdrop-blur-md border border-white/10 hover:bg-primary/20 hover:border-primary/50 transition-all text-white shadow-lg"
             onClick={scrollNext}
           >
             <ChevronRight className="h-5 w-5" />
@@ -234,11 +234,10 @@ export default function HeroBanner() {
           {slides.map((_, index) => (
             <button
               key={index}
-              className={`h-1.5 transition-all duration-300 rounded-full ${
-                index === selectedIndex 
-                  ? 'w-6 bg-primary neon-glow' 
+              className={`h-1.5 transition-all duration-300 rounded-full ${index === selectedIndex
+                  ? 'w-6 bg-primary neon-glow'
                   : 'w-1.5 bg-white/30 hover:bg-white/50'
-              }`}
+                }`}
               onClick={() => emblaApi?.scrollTo(index)}
               aria-label={`Go to slide ${index + 1}`}
             />
