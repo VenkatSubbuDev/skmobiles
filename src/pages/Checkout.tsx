@@ -15,8 +15,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
-  MapPin, Truck, Store, Plus, ArrowLeft, ShoppingBag, Loader2, CheckCircle2
+  MapPin, Truck, Store, Plus, ArrowLeft, ShoppingBag, Loader2, CheckCircle2, Tag, X, CreditCard
 } from 'lucide-react';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const SHIPPING_COST = 99;
 
@@ -43,6 +49,11 @@ export default function Checkout() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
   const [form, setForm] = useState(emptyAddress);
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
@@ -98,8 +109,57 @@ export default function Checkout() {
     setSavingAddress(false);
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setApplyingCoupon(true);
+    const { data, error } = await supabase
+      .from('coupons' as any)
+      .select('*')
+      .eq('code', couponCode.toUpperCase())
+      .eq('is_active', true)
+      .single();
+
+    const coupons: any = data;
+
+    if (error || !coupons) {
+      toast({ title: 'Invalid Coupon', description: 'This coupon code is invalid or expired.', variant: 'destructive' });
+      setApplyingCoupon(false);
+      return;
+    }
+
+    if (coupons.expiry_date && new Date(coupons.expiry_date) < new Date()) {
+      toast({ title: 'Expired Coupon', description: 'This coupon has expired.', variant: 'destructive' });
+      setApplyingCoupon(false);
+      return;
+    }
+    
+    if (subtotal < (coupons.min_order_value || 0)) {
+      toast({ title: 'Does not meet requirement', description: `Minimum order value for this coupon is ₹${coupons.min_order_value}`, variant: 'destructive' });
+      setApplyingCoupon(false);
+      return;
+    }
+
+    setAppliedCoupon(coupons);
+    toast({ title: 'Coupon Applied', description: 'Discount has been applied to your order.' });
+    setApplyingCoupon(false);
+  };
+  
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
+
   const shippingCost = deliveryMethod === 'store_pickup' ? 0 : SHIPPING_COST;
-  const total = subtotal + shippingCost;
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      discountAmount = (subtotal * appliedCoupon.value) / 100;
+    } else {
+      discountAmount = appliedCoupon.value;
+    }
+  }
+  discountAmount = Math.min(discountAmount, subtotal);
+  const total = subtotal + shippingCost - discountAmount;
   const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
   const handlePlaceOrder = async () => {
@@ -111,6 +171,20 @@ export default function Checkout() {
       toast({ title: 'Cart empty', description: 'Add items to your cart first', variant: 'destructive' });
       return;
     }
+
+    // Dynamic Script Loading for Razorpay
+    const loadRazorpayScript = () => {
+      return new Promise((resolve) => {
+        if (window.Razorpay) {
+          resolve(true); return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+    };
 
     setPlacing(true);
 
@@ -141,7 +215,9 @@ export default function Checkout() {
         notes: notes || null,
         status: 'pending' as const,
         payment_status: 'pending',
-      }])
+        coupon_id: appliedCoupon ? appliedCoupon.id : null,
+        discount_amount: discountAmount
+      } as any])
       .select()
       .single();
 
@@ -174,7 +250,81 @@ export default function Checkout() {
       return;
     }
 
-    // Clear cart
+    // Insert coupon usage if applied
+    if (appliedCoupon) {
+      await supabase.from('coupon_usage' as any).insert({
+        coupon_id: appliedCoupon.id,
+        user_id: user!.id,
+        order_id: order.id
+      });
+    }
+
+    // Try to Pay with Razorpay if setup
+    const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    
+    // Simulate real flow: only open razorpay if amount > 0
+    if (total > 0 && razorpayKeyId) {
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast({ title: 'Error', description: 'Razorpay SDK failed to load. Are you offline?', variant: 'destructive' });
+      } else {
+        // Option A: Hit the Edge Function we created:
+        try {
+          const res = await supabase.functions.invoke('create-razorpay-order', {
+            body: { amount: total, receipt: order.id }
+          });
+          
+          if (!res.error && res.data?.id) {
+            const options = {
+              key: razorpayKeyId,
+              amount: res.data.amount,
+              currency: res.data.currency,
+              name: 'SK Mobiles',
+              description: 'Purchase from SK Mobiles',
+              order_id: res.data.id,
+              handler: async function (response: any) {
+                // Payment successful!
+                await supabase.from('orders').update({ 
+                  payment_status: 'paid', 
+                  status: 'processing',
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                }).eq('id', order.id);
+                
+                await clearCart();
+                navigate(`/order-confirmation/${order.id}`);
+              },
+              prefill: {
+                name: shippingAddr?.full_name || user?.user_metadata?.full_name || '',
+                email: user?.email || '',
+                contact: shippingAddr?.phone || '',
+              },
+              theme: { color: '#0ea5e9' },
+            };
+            const rzp = new window.Razorpay(options);
+            
+            rzp.on('payment.failed', function (response: any) {
+              toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
+            });
+            
+            rzp.open();
+            setPlacing(false);
+            return; // don't navigate yet, wait for razorpay success
+          } else {
+            console.error('Edge function error:', res.error || res.data?.error);
+            toast({ title: 'Payment Setup Error', description: 'Please make sure Razorpay Secret is set in Supabase Edge Functions.', variant: 'destructive' });
+          }
+        } catch (err) {
+          console.error('Failed to invoke razorpay function', err);
+          toast({ title: 'Payment unavailable', description: 'The payment gateway is currently misconfigured.', variant: 'destructive' });
+        }
+      }
+    } else if (total > 0 && !razorpayKeyId) {
+      toast({ title: 'Demo Mode', description: 'Order placed, but payment gateway not configured. Please add VITE_RAZORPAY_KEY_ID to process real payments.' });
+    }
+
+    // Fallback or Free Order
     await clearCart();
     setPlacing(false);
     navigate(`/order-confirmation/${order.id}`);
@@ -308,7 +458,32 @@ export default function Checkout() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="text-foreground">₹{subtotal.toLocaleString()}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="text-foreground">{shippingCost === 0 ? 'Free' : `₹${shippingCost}`}</span></div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-green-600"><span>Discount ({appliedCoupon?.code})</span><span>-₹{discountAmount.toLocaleString()}</span></div>
+                  )}
                 </div>
+
+                <Separator className="bg-border" />
+
+                {/* Coupon Input */}
+                {!appliedCoupon ? (
+                  <div className="flex gap-2">
+                    <Input placeholder="Coupon code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                    <Button variant="secondary" onClick={handleApplyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
+                      {applyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2 bg-green-50 text-green-700 border border-green-200 rounded-md text-sm">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      <span className="font-semibold">{appliedCoupon.code}</span> applied!
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={handleRemoveCoupon} className="h-6 w-6 text-green-700 hover:text-green-800 hover:bg-green-100">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
 
                 <Separator className="bg-border" />
 
@@ -374,6 +549,9 @@ export default function Checkout() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{shippingCost === 0 ? 'Free' : `₹${shippingCost}`}</span></div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600"><span>Discount</span><span>-₹{discountAmount.toLocaleString()}</span></div>
+                )}
                 <div className="flex justify-between font-semibold text-lg pt-2"><span>Total</span><span className="text-primary">₹{total.toLocaleString()}</span></div>
               </div>
 

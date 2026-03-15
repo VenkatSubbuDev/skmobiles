@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle, Smartphone, Palette } from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, ShoppingCart, Users, LogOut, AlertTriangle, Smartphone, Palette, Ticket, Wrench, MessageSquareQuote, CreditCard } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,10 @@ const menuItems = [
   { title: 'Products', url: '/admin/products', icon: Package },
   { title: 'Categories', url: '/admin/categories', icon: FolderTree },
   { title: 'Orders', url: '/admin/orders', icon: ShoppingCart },
+  { title: 'Coupons', url: '/admin/coupons', icon: Ticket },
+  { title: 'Services', url: '/admin/service-requests', icon: Wrench },
+  { title: 'Reviews', url: '/admin/reviews', icon: MessageSquareQuote },
+  { title: 'Payment Setup', url: '/admin/payment-setup', icon: CreditCard },
   { title: 'Stock Alerts', url: '/admin/stock-alerts', icon: AlertTriangle },
   { title: 'Customers', url: '/admin/customers', icon: Users },
 ];

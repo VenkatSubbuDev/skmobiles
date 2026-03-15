@@ -47,14 +47,14 @@ export default function CustomCase() {
   const ORIGINAL_PRICE = 249;
 
   useEffect(() => {
-    supabase.from('mobile_brands').select('*').eq('is_active', true).order('display_order').then(({ data }) => {
+    supabase.from('brands' as any).select('*').eq('is_active', true).order('display_order').then(({ data }) => {
       if (data) setBrands(data);
     });
   }, []);
 
   useEffect(() => {
     if (!selectedBrand) { setModels([]); setSelectedModel(''); return; }
-    supabase.from('mobile_models').select('*').eq('brand_id', selectedBrand).eq('is_active', true).order('display_order').then(({ data }) => {
+    supabase.from('models' as any).select('*').eq('brand_id', selectedBrand).eq('is_active', true).order('display_order').then(({ data }) => {
       if (data) setModels(data);
       setSelectedModel('');
     });

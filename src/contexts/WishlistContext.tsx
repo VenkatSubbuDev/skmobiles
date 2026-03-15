@@ -24,6 +24,21 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       fetchWishlist();
+
+      const channel = supabase
+        .channel('wishlist_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'wishlist', filter: `user_id=eq.${user.id}` },
+          () => {
+            fetchWishlist();
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
       setItems([]);
       setLoading(false);

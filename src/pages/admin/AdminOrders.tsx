@@ -109,6 +109,14 @@ export default function AdminOrders() {
                 <div><p className="text-muted-foreground">Delivery</p><p>{selectedOrder.delivery_method?.replace('_', ' ')}</p></div>
                 <div><p className="text-muted-foreground">Date</p><p>{new Date(selectedOrder.created_at).toLocaleString()}</p></div>
               </div>
+              
+              {selectedOrder.razorpay_payment_id && (
+                <div className="bg-muted/30 p-3 rounded-md space-y-1 text-xs">
+                  <p className="font-semibold text-sm mb-2 text-foreground">Razorpay Transactions</p>
+                  <p className="flex justify-between"><span className="text-muted-foreground">Payment ID:</span> <span className="font-mono">{selectedOrder.razorpay_payment_id}</span></p>
+                  <p className="flex justify-between"><span className="text-muted-foreground">Order ID:</span> <span className="font-mono">{selectedOrder.razorpay_order_id}</span></p>
+                </div>
+              )}
               <div>
                 <p className="font-medium mb-2">Items</p>
                 <div className="space-y-2">

@@ -26,6 +26,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       fetchCart();
+      
+      const channel = supabase
+        .channel('cart_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'cart_items', filter: `user_id=eq.${user.id}` },
+          () => {
+            fetchCart();
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } else {
       setItems([]);
       setLoading(false);

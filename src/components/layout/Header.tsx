@@ -10,12 +10,14 @@ import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import CartDrawer from './CartDrawer';
 
-const categories = [
-  { name: 'Mobiles', slug: 'mobiles' },
-  { name: 'Cases', slug: 'cases' },
-  { name: 'Chargers', slug: 'chargers' },
-  { name: 'Earphones', slug: 'earphones' },
-  { name: 'Earbuds', slug: 'earbuds' },
+const navItems = [
+  { name: 'Home', path: '/' },
+  { name: 'Cases', path: '/cases' },
+  { name: 'Custom Cases', path: '/custom-cases' },
+  { name: 'Smart Watches', path: '/smart-watches' },
+  { name: 'Earbuds', path: '/earbuds' },
+  { name: 'Services', path: '/services' },
+  { name: 'Contact', path: '/contact' },
 ];
 
 export default function Header() {
@@ -49,15 +51,11 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 bg-card border-border">
               <nav className="flex flex-col gap-4 mt-8">
-                <NavLink to="/" className={({ isActive }) => 
-                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
-                }>Home</NavLink>
-                <NavLink to="/products" className={({ isActive }) => 
-                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
-                }>All Products</NavLink>
-                <NavLink to="/custom-case" className={({ isActive }) => 
-                  `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
-                }>🎨 Custom Case</NavLink>
+                {navItems.map((item) => (
+                  <NavLink key={item.path} to={item.path} className={({ isActive }) => 
+                    `text-lg font-medium transition-colors ${isActive ? 'text-primary' : 'hover:text-primary'}`
+                  }>{item.name}</NavLink>
+                ))}
               </nav>
             </SheetContent>
           </Sheet>
@@ -72,22 +70,14 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <NavLink to="/" className={({ isActive }) => 
-              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
-            }>
-              Home
-            </NavLink>
-            <NavLink to="/products" className={({ isActive }) => 
-              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
-            }>
-              Products
-            </NavLink>
-            <NavLink to="/custom-case" className={({ isActive }) => 
-              `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`
-            }>
-              Custom Case
-            </NavLink>
+          <nav className="hidden lg:flex items-center gap-6">
+            {navItems.map((item) => (
+              <NavLink key={item.path} to={item.path} className={({ isActive }) => 
+                `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary py-1' : 'text-foreground hover:text-primary py-1'}`
+              }>
+                {item.name}
+              </NavLink>
+            ))}
           </nav>
 
           {/* Right Actions */}

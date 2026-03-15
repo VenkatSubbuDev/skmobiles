@@ -6,9 +6,10 @@ const DEFAULT_DESCRIPTION = 'Your mobile phone destination';
 interface MetaConfig {
   title?: string;
   description?: string;
+  schemaData?: any;
 }
 
-export function usePageMeta({ title, description }: MetaConfig = {}) {
+export function usePageMeta({ title, description, schemaData }: MetaConfig = {}) {
   const pageTitle = title ? `${title} | ${DEFAULT_TITLE}` : DEFAULT_TITLE;
   const metaDescription = description || DEFAULT_DESCRIPTION;
 
@@ -36,7 +37,21 @@ export function usePageMeta({ title, description }: MetaConfig = {}) {
     if (ogDesc) {
       ogDesc.setAttribute('content', metaDescription);
     }
-  }, [pageTitle, metaDescription]);
+
+    // Handle JSON-LD Schema
+    let scriptTag = document.querySelector('script[type="application/ld+json"]');
+    if (schemaData) {
+      if (!scriptTag) {
+        scriptTag = document.createElement('script');
+        scriptTag.setAttribute('type', 'application/ld+json');
+        document.head.appendChild(scriptTag);
+      }
+      scriptTag.textContent = JSON.stringify(schemaData);
+    } else if (scriptTag) {
+      // Remove it if there's no schema data for this page
+      scriptTag.remove();
+    }
+  }, [pageTitle, metaDescription, schemaData]);
 }
 
 export default usePageMeta;

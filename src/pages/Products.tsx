@@ -27,9 +27,13 @@ export default function Products() {
   usePageMeta({ title: pageTitle });
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<any[]>([]); // Any due to type mismatch until gen types
+  const [models, setModels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(categorySlug || searchParams.get('category') || 'all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedModel, setSelectedModel] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
   const [maxPrice, setMaxPrice] = useState(200000);
@@ -50,14 +54,18 @@ export default function Products() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [productsRes, categoriesRes] = await Promise.all([
+    const [productsRes, categoriesRes, brandsRes, modelsRes] = await Promise.all([
       supabase.from('products').select('*, category:categories(*)').eq('is_active', true),
       supabase.from('categories').select('*').eq('is_active', true).order('name'),
+      supabase.from('brands' as any).select('*').eq('is_active', true).order('name'),
+      supabase.from('models' as any).select('*').eq('is_active', true).order('name')
     ]);
 
     const prods = (productsRes.data || []) as Product[];
     setProducts(prods);
     setCategories(categoriesRes.data as Category[] || []);
+    setBrands(brandsRes.data || []);
+    setModels(modelsRes.data || []);
 
     if (prods.length > 0) {
       const max = Math.max(...prods.map(p => p.price));
@@ -96,6 +104,14 @@ export default function Products() {
       const slugs = getCategorySlugsForFilter(selectedCategory);
       result = result.filter(p => p.category && slugs.includes(p.category.slug));
     }
+    
+    if (selectedBrand !== 'all') {
+      result = result.filter(p => (p as any).brand_id === selectedBrand);
+    }
+    
+    if (selectedModel !== 'all') {
+      result = result.filter(p => (p as any).model_id === selectedModel);
+    }
 
     result = result.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
@@ -109,7 +125,7 @@ export default function Products() {
     }
 
     return result;
-  }, [products, searchQuery, selectedCategory, sortBy, priceRange, categories]);
+  }, [products, searchQuery, selectedCategory, selectedBrand, selectedModel, sortBy, priceRange, categories]);
 
   const toggleParent = (parentId: string) => {
     setExpandedParents(prev => {
@@ -204,8 +220,44 @@ export default function Products() {
       </div>
 
       <Separator />
+      
+      {/* Brand Filter */}
+      <div>
+        <h3 className="font-semibold mb-3 text-foreground">Brand</h3>
+        <Select value={selectedBrand} onValueChange={(v) => { setSelectedBrand(v); setSelectedModel('all'); }}>
+          <SelectTrigger className="bg-secondary/50 border-border w-full">
+            <SelectValue placeholder="Select Brand" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Brands</SelectItem>
+            {brands.map(b => (
+              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Button variant="outline" className="w-full" onClick={() => { setSelectedCategory('all'); setPriceRange([0, maxPrice]); setSearchQuery(''); }}>
+      {/* Model Filter */}
+      {selectedBrand !== 'all' && (
+        <div className="mt-6">
+          <h3 className="font-semibold mb-3 text-foreground">Model</h3>
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
+            <SelectTrigger className="bg-secondary/50 border-border w-full">
+              <SelectValue placeholder="Select Model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Models</SelectItem>
+              {models.filter(m => m.brand_id === selectedBrand).map(m => (
+                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <Separator className="my-6" />
+
+      <Button variant="outline" className="w-full" onClick={() => { setSelectedCategory('all'); setSelectedBrand('all'); setSelectedModel('all'); setPriceRange([0, maxPrice]); setSearchQuery(''); }}>
         Clear Filters
       </Button>
     </div>

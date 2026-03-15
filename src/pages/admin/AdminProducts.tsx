@@ -15,19 +15,21 @@ import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 
 interface ProductForm {
   name: string; slug: string; description: string; price: string; original_price: string;
-  stock_quantity: string; low_stock_threshold: string; category_id: string;
+  stock_quantity: string; low_stock_threshold: string; category_id: string; brand_id: string; model_id: string;
   images: string; is_featured: boolean; is_active: boolean;
 }
 
 const emptyForm: ProductForm = {
   name: '', slug: '', description: '', price: '', original_price: '',
-  stock_quantity: '0', low_stock_threshold: '5', category_id: '',
+  stock_quantity: '0', low_stock_threshold: '5', category_id: '', brand_id: '', model_id: '',
   images: '', is_featured: false, is_active: true,
 };
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,12 +38,16 @@ export default function AdminProducts() {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const [pRes, cRes] = await Promise.all([
-      supabase.from('products').select('*, categories(*)'),
+    const [pRes, cRes, bRes, mRes] = await Promise.all([
+      supabase.from('products').select('*, categories(*), brands(*), models(*)'),
       supabase.from('categories').select('*'),
+      supabase.from('brands' as any).select('*'),
+      supabase.from('models' as any).select('*')
     ]);
     setProducts((pRes.data || []).map((p: any) => ({ ...p, category: p.categories })));
     setCategories(cRes.data as Category[] || []);
+    setBrands(bRes.data || []);
+    setModels(mRes.data || []);
     setLoading(false);
   };
 
@@ -53,7 +59,10 @@ export default function AdminProducts() {
       name: p.name, slug: p.slug, description: p.description || '', price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : '',
       stock_quantity: String(p.stock_quantity), low_stock_threshold: String(p.low_stock_threshold),
-      category_id: p.category_id || '', images: (p.images || []).join(', '),
+      category_id: p.category_id || '', 
+      brand_id: (p as any).brand_id || '', 
+      model_id: (p as any).model_id || '',
+      images: (p.images || []).join(', '),
       is_featured: p.is_featured, is_active: p.is_active,
     });
     setDialogOpen(true);
@@ -71,6 +80,8 @@ export default function AdminProducts() {
       stock_quantity: parseInt(form.stock_quantity),
       low_stock_threshold: parseInt(form.low_stock_threshold),
       category_id: form.category_id || null,
+      brand_id: form.brand_id || null,
+      model_id: form.model_id || null,
       images: form.images ? form.images.split(',').map(s => s.trim()).filter(Boolean) : [],
       is_featured: form.is_featured,
       is_active: form.is_active,
@@ -183,14 +194,40 @@ export default function AdminProducts() {
                 <Input type="number" value={form.low_stock_threshold} onChange={e => setForm({...form, low_stock_threshold: e.target.value})} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select value={form.category_id} onValueChange={v => setForm({...form, category_id: v})}>
-                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={form.category_id} onValueChange={v => setForm({...form, category_id: v, brand_id: '', model_id: ''})}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Brand (Optional)</Label>
+                <Select value={form.brand_id} onValueChange={v => setForm({...form, brand_id: v === 'none' ? '' : v, model_id: ''})}>
+                  <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {brands.filter(b => !form.category_id || b.category_id === form.category_id).map(b => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Model (Optional)</Label>
+                <Select value={form.model_id} onValueChange={v => setForm({...form, model_id: v === 'none' ? '' : v})}>
+                  <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {models.filter(m => form.brand_id && m.brand_id === form.brand_id).map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Image URLs (comma separated)</Label>

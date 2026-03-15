@@ -20,6 +20,7 @@ import Wishlist from "./pages/Wishlist";
 import TrackOrder from "./pages/TrackOrder";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Services from "./pages/Services";
 import FAQ from "./pages/FAQ";
 import Shipping from "./pages/Shipping";
 import Returns from "./pages/Returns";
@@ -35,8 +36,12 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminStockAlerts from "./pages/admin/AdminStockAlerts";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminBrands from "./pages/admin/AdminBrands";
-import AdminCaseOrders from "./pages/admin/AdminCaseOrders";
+import AdminCustomCaseOrders from "./pages/admin/AdminCaseOrders";
 import CustomCase from "./pages/CustomCase";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminServiceRequests from "./pages/admin/AdminServiceRequests";
+import AdminReviews from "./pages/admin/AdminReviews";
+import PaymentGatewayGuide from '@/pages/admin/PaymentGatewayGuide';
 
 const queryClient = new QueryClient();
 
@@ -63,6 +68,7 @@ const App = () => (
                     <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                     <Route path="/track-order" element={<TrackOrder />} />
                     <Route path="/about" element={<About />} />
+                    <Route path="/services" element={<Services />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/shipping" element={<Shipping />} />
@@ -81,7 +87,11 @@ const App = () => (
                     <Route path="stock-alerts" element={<AdminStockAlerts />} />
                     <Route path="customers" element={<AdminCustomers />} />
                     <Route path="brands" element={<AdminBrands />} />
-                    <Route path="case-orders" element={<AdminCaseOrders />} />
+                    <Route path="case-orders" element={<AdminCustomCaseOrders />} />
+                    <Route path="coupons" element={<AdminCoupons />} />
+                    <Route path="service-requests" element={<AdminServiceRequests />} />
+                    <Route path="reviews" element={<AdminReviews />} />
+                    <Route path="payment-setup" element={<PaymentGatewayGuide />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

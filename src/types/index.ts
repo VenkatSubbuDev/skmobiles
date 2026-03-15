@@ -88,6 +88,9 @@ export interface Order {
   total: number;
   payment_intent_id: string | null;
   payment_status: string;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
+  razorpay_signature?: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

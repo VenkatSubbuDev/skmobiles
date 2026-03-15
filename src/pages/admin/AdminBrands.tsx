@@ -7,12 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, Smartphone, ChevronDown, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
+interface Category { id: string; name: string; }
+
 interface Brand {
   id: string; name: string; slug: string; logo_url: string | null;
+  category_id?: string | null;
   is_active: boolean; display_order: number;
 }
 
@@ -22,6 +26,7 @@ interface Model {
 
 export default function AdminBrands() {
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [models, setModels] = useState<Record<string, Model[]>>({});
   const [loading, setLoading] = useState(true);
   const [brandDialogOpen, setBrandDialogOpen] = useState(false);
@@ -29,19 +34,25 @@ export default function AdminBrands() {
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [editingModel, setEditingModel] = useState<Model | null>(null);
   const [activeBrandId, setActiveBrandId] = useState<string>('');
-  const [brandForm, setBrandForm] = useState({ name: '', slug: '', logo_url: '', is_active: true, display_order: 0 });
+  const [brandForm, setBrandForm] = useState({ name: '', slug: '', logo_url: '', category_id: 'none', is_active: true, display_order: 0 });
   const [modelForm, setModelForm] = useState({ name: '', is_active: true, display_order: 0 });
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const fetchAll = async () => {
-    const [bRes, mRes] = await Promise.all([
-      supabase.from('mobile_brands').select('*').order('display_order'),
-      supabase.from('mobile_models').select('*').order('display_order'),
+    const [bRes, mRes, cRes] = await Promise.all([
+      supabase.from('brands' as any).select('*').order('display_order'),
+      supabase.from('models' as any).select('*').order('display_order'),
+      supabase.from('categories').select('id, name').eq('is_active', true)
     ]);
-    setBrands(bRes.data || []);
+    const fetchedBrands = (bRes.data as any) as Brand[];
+    const fetchedModels = (mRes.data as any) as Model[];
+    
+    setBrands(fetchedBrands || []);
+    setCategories((cRes.data as any) as Category[] || []);
+    
     const grouped: Record<string, Model[]> = {};
-    (mRes.data || []).forEach((m: Model) => {
+    (fetchedModels || []).forEach((m: Model) => {
       if (!grouped[m.brand_id]) grouped[m.brand_id] = [];
       grouped[m.brand_id].push(m);
     });
@@ -60,20 +71,27 @@ export default function AdminBrands() {
   };
 
   // Brand CRUD
-  const openNewBrand = () => { setEditingBrand(null); setBrandForm({ name: '', slug: '', logo_url: '', is_active: true, display_order: 0 }); setBrandDialogOpen(true); };
-  const openEditBrand = (b: Brand) => { setEditingBrand(b); setBrandForm({ name: b.name, slug: b.slug, logo_url: b.logo_url || '', is_active: b.is_active, display_order: b.display_order }); setBrandDialogOpen(true); };
+  const openNewBrand = () => { setEditingBrand(null); setBrandForm({ name: '', slug: '', logo_url: '', category_id: 'none', is_active: true, display_order: 0 }); setBrandDialogOpen(true); };
+  const openEditBrand = (b: Brand) => { setEditingBrand(b); setBrandForm({ name: b.name, slug: b.slug, logo_url: b.logo_url || '', category_id: b.category_id || 'none', is_active: b.is_active, display_order: b.display_order }); setBrandDialogOpen(true); };
 
   const saveBrand = async () => {
-    const payload = { ...brandForm, slug: brandForm.slug || brandForm.name.toLowerCase().replace(/\s+/g, '-'), logo_url: brandForm.logo_url || null };
+    const payload = { 
+      name: brandForm.name, 
+      slug: brandForm.slug || brandForm.name.toLowerCase().replace(/\s+/g, '-'), 
+      logo_url: brandForm.logo_url || null,
+      category_id: brandForm.category_id === 'none' ? null : brandForm.category_id,
+      is_active: brandForm.is_active,
+      display_order: brandForm.display_order
+    };
     const { error } = editingBrand
-      ? await supabase.from('mobile_brands').update(payload).eq('id', editingBrand.id)
-      : await supabase.from('mobile_brands').insert(payload);
+      ? await supabase.from('brands' as any).update(payload).eq('id', editingBrand.id)
+      : await supabase.from('brands' as any).insert(payload);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: editingBrand ? 'Brand updated' : 'Brand created' }); setBrandDialogOpen(false); fetchAll(); }
   };
 
   const deleteBrand = async (id: string) => {
-    const { error } = await supabase.from('mobile_brands').delete().eq('id', id);
+    const { error } = await supabase.from('brands' as any).delete().eq('id', id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Brand deleted' }); fetchAll(); }
   };
@@ -85,14 +103,14 @@ export default function AdminBrands() {
   const saveModel = async () => {
     const payload = { ...modelForm, brand_id: activeBrandId };
     const { error } = editingModel
-      ? await supabase.from('mobile_models').update(payload).eq('id', editingModel.id)
-      : await supabase.from('mobile_models').insert(payload);
+      ? await supabase.from('models' as any).update(payload).eq('id', editingModel.id)
+      : await supabase.from('models' as any).insert(payload);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: editingModel ? 'Model updated' : 'Model created' }); setModelDialogOpen(false); fetchAll(); }
   };
 
   const deleteModel = async (id: string) => {
-    const { error } = await supabase.from('mobile_models').delete().eq('id', id);
+    const { error } = await supabase.from('models' as any).delete().eq('id', id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Model deleted' }); fetchAll(); }
   };
@@ -161,6 +179,16 @@ export default function AdminBrands() {
             <div className="space-y-2"><Label>Name</Label><Input value={brandForm.name} onChange={e => setBrandForm({...brandForm, name: e.target.value})} placeholder="e.g. Samsung" /></div>
             <div className="space-y-2"><Label>Slug</Label><Input value={brandForm.slug} onChange={e => setBrandForm({...brandForm, slug: e.target.value})} placeholder="auto-generated" /></div>
             <div className="space-y-2"><Label>Logo URL (optional)</Label><Input value={brandForm.logo_url} onChange={e => setBrandForm({...brandForm, logo_url: e.target.value})} /></div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={brandForm.category_id} onValueChange={v => setBrandForm({...brandForm, category_id: v})}>
+                <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None / Global</SelectItem>
+                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2"><Label>Display Order</Label><Input type="number" value={brandForm.display_order} onChange={e => setBrandForm({...brandForm, display_order: parseInt(e.target.value) || 0})} /></div>
             <div className="flex items-center gap-2"><Switch checked={brandForm.is_active} onCheckedChange={v => setBrandForm({...brandForm, is_active: v})} /><Label>Active</Label></div>
             <Button onClick={saveBrand} className="w-full">{editingBrand ? 'Update' : 'Create'} Brand</Button>

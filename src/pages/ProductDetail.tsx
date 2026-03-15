@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Heart, ShoppingCart, Star, Minus, Plus, Truck, Shield, RotateCcw, Share2 } from 'lucide-react';
+import { ChevronRight, Heart, ShoppingCart, Star, Minus, Plus, Truck, Shield, RotateCcw, Share2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -99,6 +99,19 @@ export default function ProductDetail() {
       fetchProduct();
     }
     setSubmittingReview(false);
+  };
+
+  const handleWhatsAppOrder = () => {
+    if (!product) return;
+    const phoneNumber = '918688575044';
+    const message = `Hello SK Mobiles, I want to order this product:
+    
+Product: ${product.name}
+Price: ₹${product.price}
+Quantity: ${quantity}
+Product URL: ${window.location.origin}/product/${product.slug}`;
+    
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const avgRating = reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
@@ -232,10 +245,18 @@ export default function ProductDetail() {
                 <ShoppingCart className="h-5 w-5 mr-2" />Add to Cart
               </Button>
 
-              <Button variant="outline" size="lg" onClick={handleWishlist} className={cn(inWishlist && "text-destructive border-destructive/30")}>
+              <Button variant="outline" size="lg" onClick={handleWishlist} className={cn("px-3", inWishlist && "text-destructive border-destructive/30")}>
                 <Heart className={cn("h-5 w-5", inWishlist && "fill-current")} />
               </Button>
             </div>
+            
+            <Button 
+              className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white" 
+              size="lg" 
+              onClick={handleWhatsAppOrder}
+            >
+              <MessageCircle className="h-5 w-5 mr-2" /> Order via WhatsApp
+            </Button>
 
             {/* Features */}
             <div className="grid grid-cols-3 gap-4 pt-4">
