@@ -13,15 +13,13 @@ export default function Shipping() {
           <Truck className="h-10 w-10 text-primary mb-4" />
           <h3 className="text-xl font-semibold mb-2">Standard Shipping</h3>
           <p className="text-muted-foreground">3-7 business days</p>
-          <p className="text-sm text-muted-foreground mt-2">Free for orders above ₹999</p>
-          <p className="text-primary font-semibold mt-1">₹99 for orders below ₹999</p>
+          <p className="text-sm text-primary font-bold mt-2">FREE Shipping all over India</p>
         </div>
-        <div className="bg-card p-6 rounded-lg border">
+        <div className="bg-card p-6 rounded-lg border flex flex-col justify-center">
           <Package className="h-10 w-10 text-primary mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Express Shipping</h3>
-          <p className="text-muted-foreground">1-3 business days</p>
-          <p className="text-sm text-muted-foreground mt-2">Available in major cities</p>
-          <p className="text-primary font-semibold mt-1">₹199 flat rate</p>
+          <h3 className="text-xl font-semibold mb-2">Delivery Policy</h3>
+          <p className="text-muted-foreground">Secure packing & reliable delivery partners</p>
+          <p className="text-sm text-primary font-bold mt-2">No minimum order required</p>
         </div>
       </div>
 

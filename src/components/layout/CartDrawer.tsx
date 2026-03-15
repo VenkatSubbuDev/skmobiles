@@ -96,8 +96,8 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                 <span>Subtotal</span>
                 <span className="text-primary">₹{subtotal.toLocaleString()}</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Shipping and taxes calculated at checkout
+              <p className="text-sm text-primary font-bold">
+                FREE Shipping all over India
               </p>
               <div className="grid gap-2">
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 neon-glow" onClick={onClose}>

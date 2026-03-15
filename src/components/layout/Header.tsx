@@ -33,7 +33,7 @@ export default function Header() {
       <div className="container mx-auto px-4">
         {/* Top Bar */}
         <div className="hidden md:flex items-center justify-between py-2 text-sm text-muted-foreground border-b border-border/30">
-          <p>Free shipping on orders over ₹999</p>
+          <p>Free shipping all over India</p>
           <div className="flex items-center gap-4">
             <Link to="/track-order" className="hover:text-primary transition-colors">Track Order</Link>
             <Link to="/contact" className="hover:text-primary transition-colors">Contact Us</Link>

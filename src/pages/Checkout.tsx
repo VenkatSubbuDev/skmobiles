@@ -24,7 +24,7 @@ declare global {
   }
 }
 
-const SHIPPING_COST = 99;
+const SHIPPING_COST = 0;
 
 const emptyAddress = {
   full_name: '', phone: '', address_line1: '', address_line2: '',
