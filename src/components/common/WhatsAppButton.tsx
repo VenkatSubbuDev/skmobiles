@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 export default function WhatsAppButton() {
   const [isVisible, setIsVisible] = useState(false);
   const phoneNumber = '918688575044';
-  const message = 'Hello SK Mobiles, I need help regarding a product.';
+  const message = 'Hello SK Mobiles, I want to order custom case for my mobile';
   const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
   // Show button after a short delay
