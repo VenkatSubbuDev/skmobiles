@@ -56,8 +56,8 @@ export default function CustomCase() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const SALE_PRICE = 299;
-  const ORIGINAL_PRICE = 499;
+  const [salePrice, setSalePrice] = useState(299);
+  const [originalPrice, setOriginalPrice] = useState(499);
   const SHIPPING_CHARGE = 0;
 
   useEffect(() => {
@@ -68,6 +68,15 @@ export default function CustomCase() {
   }, [user]);
 
   useEffect(() => {
+    supabase.from('site_settings' as any).select('*').then(({ data }: { data: any[] | null }) => {
+      if (data) {
+        const sp = data.find(s => s.key === 'custom_case_sale_price');
+        const op = data.find(s => s.key === 'custom_case_original_price');
+        if (sp) setSalePrice(Number(sp.value));
+        if (op) setOriginalPrice(Number(op.value));
+      }
+    });
+
     supabase.from('brands' as any).select('*').eq('is_active', true).order('display_order').then(({ data }) => {
       if (data) setBrands(data as unknown as Brand[]);
     });
@@ -137,7 +146,7 @@ export default function CustomCase() {
     }
 
     setSubmitting(true);
-    const totalAmount = SALE_PRICE * quantity;
+    const totalAmount = salePrice * quantity;
 
     try {
       // 1. Upload image
@@ -168,34 +177,54 @@ export default function CustomCase() {
       if (rzErr || !rzOrder?.id) throw new Error('Failed to initialize payment');
 
       // 4. Open Razorpay
+      // 5. Create Order upfront as pending
+      const { data: order, error: orderErr } = await (supabase.from('custom_case_orders') as any).insert({
+        user_id: user.id, brand_id: selectedBrand, model_id: selectedModel, image_url: publicUrl,
+        customer_name: customerName, customer_phone: customerPhone, customer_email: customerEmail || null,
+        shipping_address: address, city, state, pincode, quantity, price: totalAmount,
+        payment_status: 'pending',
+        status: 'pending',
+        order_number: 'TEMP'
+      }).select().single();
+
+      if (orderErr) throw orderErr;
+
+      // 6. Finalize Verification on Success
       const options = {
         key: rzKey, amount: rzOrder.amount, currency: rzOrder.currency, name: 'SK Mobiles',
         description: `Custom Case for ${models.find(m => m.id === selectedModel)?.name}`,
         order_id: rzOrder.id,
         handler: async (response: any) => {
-      // 5. Finalize Database Order on Success
-          const { data: order, error } = await (supabase.from('custom_case_orders') as any).insert({
-            user_id: user.id, brand_id: selectedBrand, model_id: selectedModel, image_url: publicUrl,
-            customer_name: customerName, customer_phone: customerPhone, customer_email: customerEmail || null,
-            shipping_address: address, city, state, pincode, quantity, price: totalAmount,
-            payment_status: 'paid', razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature,
-            status: 'processing',
-            order_number: 'TEMP'
-          }).select('order_number').single();
+          try {
+            const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                order_id: order.id,
+                table: 'custom_case_orders'
+              }
+            });
 
-          if (error) {
-            toast({ title: 'Order Saved with Issues', description: 'Payment successful but database update failed. Please contact support.', variant: 'destructive' });
-            return;
+            if (verifyRes.error) throw new Error(verifyRes.error.message || 'Verification failed');
+
+            setOrderPlaced(true);
+            // Fetch updated order for the final order number
+            const { data: updatedOrder } = await (supabase.from('custom_case_orders') as any).select('order_number').eq('id', order.id).single();
+            setOrderNumber(updatedOrder?.order_number || order.id);
+            toast({ title: '🎉 Order placed!', description: `Order ${updatedOrder?.order_number || ''} confirmed.` });
+            
+            // Trigger WhatsApp notification
+            const waMessage = `New Custom Case Order! %0AOrder: ${updatedOrder?.order_number || ''}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${totalAmount}`;
+            window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
+          } catch (verifyErr: any) {
+            console.error('Verification error:', verifyErr);
+            toast({ 
+              title: 'Payment Verification Error', 
+              description: 'Your payment was successful but verification failed. Please contact support.', 
+              variant: 'destructive' 
+            });
           }
-
-          setOrderPlaced(true);
-          setOrderNumber(order.order_number);
-          toast({ title: '🎉 Order placed!', description: `Order ${order.order_number} confirmed.` });
-          
-          // Trigger WhatsApp notification logic here if needed
-          const waMessage = `New Custom Case Order! %0AOrder: ${order.order_number}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${totalAmount}`;
-          window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
         },
         prefill: { name: customerName, email: customerEmail, contact: customerPhone },
         theme: { color: '#0ea5e9' }
@@ -247,8 +276,8 @@ export default function CustomCase() {
             Upload any photo — your loved ones, celebrities, landscapes — we print it on an unbreakable case!
           </p>
           <div className="flex items-center justify-center gap-3">
-            <span className="text-3xl font-bold text-primary flex items-center"><IndianRupee className="w-6 h-6" />{SALE_PRICE}</span>
-            <span className="text-xl text-muted-foreground line-through flex items-center"><IndianRupee className="w-4 h-4" />{ORIGINAL_PRICE}</span>
+            <span className="text-3xl font-bold text-primary flex items-center"><IndianRupee className="w-6 h-6" />{salePrice}</span>
+            <span className="text-xl text-muted-foreground line-through flex items-center"><IndianRupee className="w-4 h-4" />{originalPrice}</span>
             <Badge variant="destructive" className="animate-pulse">FREE SHIPPING</Badge>
           </div>
         </div>
@@ -457,7 +486,7 @@ export default function CustomCase() {
                         </div>
                         <div className="flex items-center justify-between pt-4 border-t">
                           <div>
-                            <p className="font-bold text-2xl text-primary">₹{(SALE_PRICE * quantity).toLocaleString()}</p>
+                            <p className="font-bold text-2xl text-primary">₹{(salePrice * quantity).toLocaleString()}</p>
                             <p className="text-[10px] text-muted-foreground">Includes GST & Free Shipping</p>
                           </div>
                           <div className="text-right">
@@ -476,7 +505,7 @@ export default function CustomCase() {
                   {submitting ? (
                     <span className="flex items-center gap-2"><Loader2 className="animate-spin h-5 w-5" /> Processing...</span>
                   ) : (
-                    `Place Order — ₹${(SALE_PRICE * quantity).toLocaleString()}`
+                    `Place Order — ₹${(salePrice * quantity).toLocaleString()}`
                   )}
                 </Button>
               </div>
@@ -488,3 +517,4 @@ export default function CustomCase() {
     </div>
   );
 }
+

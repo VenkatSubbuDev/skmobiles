@@ -29,6 +29,7 @@ const menuItems = [
   { title: 'Payment Setup', url: '/skadmin/payment-setup', icon: CreditCard },
   { title: 'Stock Alerts', url: '/skadmin/stock-alerts', icon: AlertTriangle },
   { title: 'Customers', url: '/skadmin/customers', icon: Users },
+  { title: 'Settings', url: '/skadmin/settings', icon: Palette },
 ];
 
 export function AdminSidebar() {

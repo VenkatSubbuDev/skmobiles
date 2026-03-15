@@ -283,30 +283,45 @@ export default function Checkout() {
               description: 'Purchase from SK Mobiles',
               order_id: res.data.id,
               handler: async function (response: any) {
-                // Payment successful!
-                await supabase.from('orders').update({ 
-                  payment_status: 'paid', 
-                  status: 'processing',
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
-                }).eq('id', order.id);
-                
-                // Send confirmation email
+                // Securely verify payment on the backend
                 try {
-                  await supabase.functions.invoke('send-order-email', {
-                    body: { 
-                      email: user?.email, 
-                      orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
-                      total: total 
+                  const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
+                    body: {
+                      razorpay_order_id: response.razorpay_order_id,
+                      razorpay_payment_id: response.razorpay_payment_id,
+                      razorpay_signature: response.razorpay_signature,
+                      order_id: order.id,
+                      table: 'orders'
                     }
                   });
-                } catch (emailErr) {
-                  console.error('Failed to send confirmation email', emailErr);
-                }
 
-                await clearCart();
-                navigate(`/order-confirmation/${order.id}`);
+                  if (verifyRes.error) {
+                    throw new Error(verifyRes.error.message || 'Payment verification failed');
+                  }
+                  
+                  // Send confirmation email after verified payment
+                  try {
+                    await supabase.functions.invoke('send-order-email', {
+                      body: { 
+                        email: user?.email, 
+                        orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
+                        total: total 
+                      }
+                    });
+                  } catch (emailErr) {
+                    console.error('Failed to send confirmation email', emailErr);
+                  }
+
+                  await clearCart();
+                  navigate(`/order-confirmation/${order.id}`);
+                } catch (verifyErr: any) {
+                  console.error('Verification error:', verifyErr);
+                  toast({ 
+                    title: 'Payment Verification Error', 
+                    description: 'Your payment was successful but verification failed. Please contact support with your Payment ID.', 
+                    variant: 'destructive' 
+                  });
+                }
               },
               prefill: {
                 name: shippingAddr?.full_name || user?.user_metadata?.full_name || '',

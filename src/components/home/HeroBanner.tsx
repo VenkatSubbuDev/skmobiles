@@ -15,7 +15,7 @@ import customCaseUserUpload3 from '@/assets/custom_case_user_upload_3.png';
 const slides = [
   {
     id: '1',
-    badge: '🔥 Limited Offer — ₹199 Only',
+    badge: '🔥 Limited Offer — ₹299 Only',
     title: 'Custom Unbreakable Cases',
     titleGradient: false,
     titleSpan: 'Custom',
@@ -183,8 +183,8 @@ export default function HeroBanner() {
                     {/* Optional Price callout */}
                     {slide.showPrice && (
                       <div className="mt-6 flex items-center gap-3 bg-background/40 w-fit px-4 py-2 rounded-xl border border-white/5 backdrop-blur-md">
-                        <span className="text-2xl font-extrabold text-primary tracking-tight">₹199</span>
-                        <span className="text-base text-muted-foreground/60 line-through decoration-muted-foreground/40 text-decoration-thickness-2">₹249</span>
+                        <span className="text-2xl font-extrabold text-primary tracking-tight">₹299</span>
+                        <span className="text-base text-muted-foreground/60 line-through decoration-muted-foreground/40 text-decoration-thickness-2">₹499</span>
                         <Badge variant="destructive" className="animate-pulse bg-red-500/10 text-red-500 border-red-500/20 text-xs py-0">20% OFF</Badge>
                       </div>
                     )}

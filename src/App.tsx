@@ -41,6 +41,7 @@ import CustomCase from "./pages/CustomCase";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminServiceRequests from "./pages/admin/AdminServiceRequests";
 import AdminReviews from "./pages/admin/AdminReviews";
+import AdminSettings from "./pages/admin/AdminSettings";
 import PaymentGatewayGuide from '@/pages/admin/PaymentGatewayGuide';
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ const App = () => (
                     <Route path="service-requests" element={<AdminServiceRequests />} />
                     <Route path="reviews" element={<AdminReviews />} />
                     <Route path="payment-setup" element={<PaymentGatewayGuide />} />
+                    <Route path="settings" element={<AdminSettings />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
