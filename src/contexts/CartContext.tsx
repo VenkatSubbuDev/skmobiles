@@ -70,10 +70,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = async (productId: string, quantity = 1) => {
     if (!user) {
       toast({
-        title: "Please sign in",
-        description: "You need to be signed in to add items to cart",
-        variant: "destructive",
+        title: "Sign in required",
+        description: "Please sign in to add items to your cart",
       });
+      window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
       return;
     }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import usePageMeta from '@/hooks/usePageMeta';
-import { Upload, Smartphone, ImageIcon, ShieldCheck, CheckCircle2, IndianRupee } from 'lucide-react';
+import { Upload, Smartphone, ImageIcon, ShieldCheck, CheckCircle2, IndianRupee, MapPin, Phone, Loader2 } from 'lucide-react';
+
+declare global { interface Window { Razorpay: any; } }
 
 interface Brand {
   id: string;
@@ -36,26 +41,39 @@ export default function CustomCase() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [shippingAddress, setShippingAddress] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const SALE_PRICE = 199;
   const ORIGINAL_PRICE = 249;
 
   useEffect(() => {
+    if (user) {
+      setCustomerName(user.user_metadata?.full_name || '');
+      setCustomerEmail(user.email || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
     supabase.from('brands' as any).select('*').eq('is_active', true).order('display_order').then(({ data }) => {
-      if (data) setBrands(data);
+      if (data) setBrands(data as unknown as Brand[]);
     });
   }, []);
 
   useEffect(() => {
     if (!selectedBrand) { setModels([]); setSelectedModel(''); return; }
     supabase.from('models' as any).select('*').eq('brand_id', selectedBrand).eq('is_active', true).order('display_order').then(({ data }) => {
-      if (data) setModels(data);
+      if (data) setModels(data as unknown as Model[]);
       setSelectedModel('');
     });
   }, [selectedBrand]);
@@ -75,42 +93,93 @@ export default function CustomCase() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBrand || !selectedModel || !imageFile || !customerName || !customerPhone || !shippingAddress) {
+    if (!user) {
+      toast({ title: 'Sign in required', description: 'Please sign in to place an order' });
+      navigate('/auth?redirect=/custom-case');
+      return;
+    }
+    if (!selectedBrand || !selectedModel || !imageFile || !customerName || !customerPhone || !address || !city || !state || !pincode) {
       toast({ title: 'Missing fields', description: 'Please fill all required fields', variant: 'destructive' });
+      return;
+    }
+    if (customerPhone.length < 10) {
+      toast({ title: 'Invalid Phone', description: 'Please enter a valid 10-digit mobile number', variant: 'destructive' });
+      return;
+    }
+    if (pincode.length !== 6) {
+      toast({ title: 'Invalid Pincode', description: 'Please enter a valid 6-digit pincode', variant: 'destructive' });
       return;
     }
 
     setSubmitting(true);
+    const totalAmount = SALE_PRICE * quantity;
+
     try {
-      // Upload image
+      // 1. Upload image
       const ext = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+      const fileName = `${user.id}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from('case-images').upload(fileName, imageFile);
       if (uploadError) throw uploadError;
-
       const { data: { publicUrl } } = supabase.storage.from('case-images').getPublicUrl(fileName);
 
-      // Create order
-      const { data, error } = await supabase.from('custom_case_orders').insert({
-        brand_id: selectedBrand,
-        model_id: selectedModel,
-        image_url: publicUrl,
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        customer_email: customerEmail || null,
-        shipping_address: shippingAddress,
-        quantity,
-        price: SALE_PRICE * quantity,
-        order_number: 'TEMP', // trigger will replace
-      }).select('order_number').single();
+      // 2. Prepare Razorpay
+      const loadRazorpay = () => new Promise(res => {
+        if (window.Razorpay) return res(true);
+        const s = document.createElement('script'); s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = () => res(true); s.onerror = () => res(false); document.body.appendChild(s);
+      });
 
-      if (error) throw error;
+      const rzKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      const rzReady = await loadRazorpay();
 
-      setOrderPlaced(true);
-      setOrderNumber(data.order_number);
-      toast({ title: '🎉 Order placed!', description: `Your custom case order ${data.order_number} has been placed.` });
+      if (!rzKey || !rzReady) {
+        throw new Error('Payment gateway not available. Please try later.');
+      }
+
+      // 3. Create Razorpay Order via Edge Function
+      const { data: rzOrder, error: rzErr } = await supabase.functions.invoke('create-razorpay-order', {
+        body: { amount: totalAmount, receipt: `custom-${Date.now()}` }
+      });
+      if (rzErr || !rzOrder?.id) throw new Error('Failed to initialize payment');
+
+      // 4. Open Razorpay
+      const options = {
+        key: rzKey, amount: rzOrder.amount, currency: rzOrder.currency, name: 'SK Mobiles',
+        description: `Custom Case for ${models.find(m => m.id === selectedModel)?.name}`,
+        order_id: rzOrder.id,
+        handler: async (response: any) => {
+      // 5. Finalize Database Order on Success
+          const { data: order, error } = await (supabase.from('custom_case_orders') as any).insert({
+            user_id: user.id, brand_id: selectedBrand, model_id: selectedModel, image_url: publicUrl,
+            customer_name: customerName, customer_phone: customerPhone, customer_email: customerEmail || null,
+            shipping_address: address, city, state, pincode, quantity, price: totalAmount,
+            payment_status: 'paid', razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature,
+            status: 'processing',
+            order_number: 'TEMP'
+          }).select('order_number').single();
+
+          if (error) {
+            toast({ title: 'Order Saved with Issues', description: 'Payment successful but database update failed. Please contact support.', variant: 'destructive' });
+            return;
+          }
+
+          setOrderPlaced(true);
+          setOrderNumber(order.order_number);
+          toast({ title: '🎉 Order placed!', description: `Order ${order.order_number} confirmed.` });
+          
+          // Trigger WhatsApp notification logic here if needed
+          const waMessage = `New Custom Case Order! %0AOrder: ${order.order_number}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${totalAmount}`;
+          window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
+        },
+        prefill: { name: customerName, email: customerEmail, contact: customerPhone },
+        theme: { color: '#0ea5e9' }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast({ title: 'Order Failed', description: err.message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +200,7 @@ export default function CustomCase() {
               <p className="text-xl font-mono font-bold text-primary">{orderNumber}</p>
             </div>
             <p className="text-sm text-muted-foreground">We'll contact you on your phone number for order updates and payment confirmation.</p>
-            <Button onClick={() => { setOrderPlaced(false); setImageFile(null); setImagePreview(null); setCustomerName(''); setCustomerPhone(''); setShippingAddress(''); setQuantity(1); }} className="w-full">
+            <Button onClick={() => { setOrderPlaced(false); setImageFile(null); setImagePreview(null); setCustomerName(''); setCustomerPhone(''); setAddress(''); setCity(''); setState(''); setPincode(''); setQuantity(1); }} className="w-full">
               Design Another Case
             </Button>
           </CardContent>
@@ -244,28 +313,49 @@ export default function CustomCase() {
 
           <Card className="glass border-border/50">
             <CardContent className="p-6 space-y-5">
-              <h2 className="text-lg font-semibold">Step 3: Your Details</h2>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" /> Step 3: Shipping Details
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Full Name *</Label>
-                  <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Your name" required />
+                  <Input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Enter full name" required disabled={submitting} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone Number *</Label>
-                  <Input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="10 digit mobile number" required />
+                  <Label>Mobile Number *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input className="pl-9" value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0,10))} placeholder="10-digit number" required disabled={submitting} />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Email (for order tracking)</Label>
+                  <Input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="your@email.com" disabled={submitting} />
+                </div>
+                <div className="space-y-2">
+                  <Label>PIN Code *</Label>
+                  <Input value={pincode} onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0,6))} placeholder="6-digit Pincode" required disabled={submitting} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Email (optional)</Label>
-                <Input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="your@email.com" />
+                <Label>Full Address *</Label>
+                <Textarea value={address} onChange={e => setAddress(e.target.value)} placeholder="House No, Building, Street Name..." required disabled={submitting} rows={2} />
               </div>
-              <div className="space-y-2">
-                <Label>Shipping Address *</Label>
-                <Textarea value={shippingAddress} onChange={e => setShippingAddress(e.target.value)} placeholder="Full address with pincode" required rows={3} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>City *</Label>
+                  <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City" required disabled={submitting} />
+                </div>
+                <div className="space-y-2">
+                  <Label>State *</Label>
+                  <Input value={state} onChange={e => setState(e.target.value)} placeholder="State" required disabled={submitting} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Quantity</Label>
-                <Input type="number" min={1} max={10} value={quantity} onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} />
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between"><Label>Quantity</Label><Badge variant="secondary">{quantity} unit(s)</Badge></div>
+                <Input type="range" min={1} max={10} value={quantity} onChange={e => setQuantity(parseInt(e.target.value))} className="h-2" disabled={submitting} />
               </div>
             </CardContent>
           </Card>
@@ -292,8 +382,14 @@ export default function CustomCase() {
             </CardContent>
           </Card>
 
-          <Button type="submit" size="lg" className="w-full text-lg neon-glow" disabled={submitting}>
-            {submitting ? 'Placing Order...' : `🛒 Place Order — ₹${SALE_PRICE * quantity}`}
+          <Button type="submit" size="lg" className="w-full text-lg neon-glow py-7" disabled={submitting || authLoading}>
+            {submitting ? (
+              <span className="flex items-center gap-2"><Loader2 className="animate-spin h-5 w-5" /> Processing Order...</span>
+            ) : !user ? (
+              'Login to Place Order'
+            ) : (
+              `Pay & Place Order — ₹${(SALE_PRICE * quantity).toLocaleString()}`
+            )}
           </Button>
           <p className="text-center text-xs text-muted-foreground">Cash on Delivery available • Free shipping on orders above ₹499</p>
         </form>

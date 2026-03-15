@@ -5,13 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, ExternalLink } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Eye, ExternalLink, Download, Printer } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface CaseOrder {
   id: string; order_number: string; customer_name: string; customer_phone: string;
-  customer_email: string | null; shipping_address: string; quantity: number;
-  price: number; status: string; image_url: string; notes: string | null;
+  customer_email: string | null; shipping_address: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  payment_status?: string;
+  quantity: number; price: number; status: string; image_url: string; notes: string | null;
   created_at: string; brand_name?: string; model_name?: string;
 }
 
@@ -52,6 +56,27 @@ export default function AdminCaseOrders() {
     const { error } = await supabase.from('custom_case_orders').update({ status }).eq('id', id);
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else { toast({ title: 'Status updated' }); fetchOrders(); }
+  };
+
+  const handleDownload = async (imageUrl: string, orderNumber: string, model: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${orderNumber}-${model?.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({ title: 'Download failed', description: 'Could not download the high-res image', variant: 'destructive' });
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading) return <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-20 shimmer rounded-lg" />)}</div>;
@@ -120,8 +145,25 @@ export default function AdminCaseOrders() {
                 <div><p className="text-muted-foreground">Quantity</p><p className="font-medium">{selectedOrder.quantity}</p></div>
                 <div><p className="text-muted-foreground">Total</p><p className="font-medium text-primary">₹{selectedOrder.price}</p></div>
               </div>
-              <div><p className="text-sm text-muted-foreground">Shipping Address</p><p className="text-sm">{selectedOrder.shipping_address}</p></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-sm text-muted-foreground">City</p><p className="text-sm">{selectedOrder.city || 'N/A'}</p></div>
+                <div><p className="text-sm text-muted-foreground">State</p><p className="text-sm">{selectedOrder.state || 'N/A'}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-sm text-muted-foreground">PIN Code</p><p className="text-sm">{selectedOrder.pincode || 'N/A'}</p></div>
+                <div><p className="text-sm text-muted-foreground">Payment Status</p><Badge variant={selectedOrder.payment_status === 'paid' ? 'outline' : 'secondary'}>{selectedOrder.payment_status || 'pending'}</Badge></div>
+              </div>
+              <div><p className="text-sm text-muted-foreground">Full Address</p><p className="text-sm truncate hover:whitespace-normal">{selectedOrder.shipping_address}</p></div>
               {selectedOrder.customer_email && <div><p className="text-sm text-muted-foreground">Email</p><p className="text-sm">{selectedOrder.customer_email}</p></div>}
+              
+              <div className="flex gap-3 pt-4 no-print">
+                <Button className="flex-1 gap-2" onClick={() => handleDownload(selectedOrder.image_url, selectedOrder.order_number, selectedOrder.model_name || 'case')}>
+                  <Download className="w-4 h-4" /> Download High-Res
+                </Button>
+                <Button variant="outline" className="flex-1 gap-2" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> Print Order
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

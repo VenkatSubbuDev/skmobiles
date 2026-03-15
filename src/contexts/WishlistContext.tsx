@@ -68,10 +68,10 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const addToWishlist = async (productId: string) => {
     if (!user) {
       toast({
-        title: "Please sign in",
-        description: "You need to be signed in to add items to wishlist",
-        variant: "destructive",
+        title: "Sign in required",
+        description: "Please sign in to add items to your wishlist",
       });
+      window.location.href = `/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
       return;
     }
 
