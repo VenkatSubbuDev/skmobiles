@@ -12,10 +12,10 @@ import CartDrawer from './CartDrawer';
 
 const navItems = [
   { name: 'Home', path: '/' },
-  { name: 'Cases', path: '/cases' },
-  { name: 'Custom Cases', path: '/custom-cases' },
-  { name: 'Smart Watches', path: '/smart-watches' },
-  { name: 'Earbuds', path: '/earbuds' },
+  { name: 'Cases', path: '/category/cases' },
+  { name: 'Custom Cases', path: '/custom-case' },
+  { name: 'Smart Watches', path: '/category/smart-watches' },
+  { name: 'Earbuds', path: '/category/earbuds' },
   { name: 'Services', path: '/services' },
   { name: 'Contact', path: '/contact' },
 ];

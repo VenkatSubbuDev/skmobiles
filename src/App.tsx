@@ -78,8 +78,8 @@ const App = () => (
                     <Route path="/cookies" element={<Cookies />} />
                     <Route path="/custom-case" element={<CustomCase />} />
                   </Route>
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin" element={<AdminLayout />}>
+                  <Route path="/skadmin/login" element={<AdminLogin />} />
+                  <Route path="/skadmin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
                     <Route path="categories" element={<AdminCategories />} />

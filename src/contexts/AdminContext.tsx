@@ -8,7 +8,7 @@ interface AdminContextType {
   adminLogout: () => Promise<void>;
 }
 
-const ADMIN_KEY = 'sk_admin_auth';
+
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
@@ -19,14 +19,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAdminRole = async () => {
-      // Check static admin session first
-      const staticAdmin = sessionStorage.getItem(ADMIN_KEY);
-      if (staticAdmin === 'authenticated') {
-        setIsAdmin(true);
-        setIsLoading(false);
-        return;
-      }
-
       if (!user) {
         setIsAdmin(false);
         setIsLoading(false);
@@ -53,7 +45,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [user, authLoading]);
 
   const adminLogout = async () => {
-    sessionStorage.removeItem(ADMIN_KEY);
     await supabase.auth.signOut();
     setIsAdmin(false);
   };
@@ -73,7 +64,4 @@ export function useAdmin() {
   return context;
 }
 
-// Static login helper
-export function staticAdminLogin() {
-  sessionStorage.setItem(ADMIN_KEY, 'authenticated');
-}
+

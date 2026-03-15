@@ -292,6 +292,19 @@ export default function Checkout() {
                   razorpay_signature: response.razorpay_signature
                 }).eq('id', order.id);
                 
+                // Send confirmation email
+                try {
+                  await supabase.functions.invoke('send-order-email', {
+                    body: { 
+                      email: user?.email, 
+                      orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
+                      total: total 
+                    }
+                  });
+                } catch (emailErr) {
+                  console.error('Failed to send confirmation email', emailErr);
+                }
+
                 await clearCart();
                 navigate(`/order-confirmation/${order.id}`);
               },
@@ -325,6 +338,18 @@ export default function Checkout() {
     }
 
     // Fallback or Free Order
+    try {
+      await supabase.functions.invoke('send-order-email', {
+        body: { 
+          email: user?.email, 
+          orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
+          total: total 
+        }
+      });
+    } catch (emailErr) {
+      console.error('Failed to send confirmation email', emailErr);
+    }
+
     await clearCart();
     setPlacing(false);
     navigate(`/order-confirmation/${order.id}`);
