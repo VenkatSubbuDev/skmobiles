@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 const categories = [
   { name: 'Mobiles', slug: 'mobiles' },
   { name: 'Cases & Covers', slug: 'cases' },
+  { name: 'Smart Watches', slug: 'smart-watches' },
   { name: 'Chargers', slug: 'chargers' },
   { name: 'Earphones', slug: 'earphones' },
   { name: 'Earbuds', slug: 'earbuds' },

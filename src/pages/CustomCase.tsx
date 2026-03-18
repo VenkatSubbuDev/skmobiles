@@ -59,7 +59,6 @@ export default function CustomCase() {
   const [salePrice, setSalePrice] = useState(299);
   const [originalPrice, setOriginalPrice] = useState(499);
   const SHIPPING_CHARGE = 0;
-  const paymentDebug = new URLSearchParams(window.location.search).has('debug_payment');
 
   useEffect(() => {
     if (user) {
@@ -176,15 +175,6 @@ export default function CustomCase() {
       const { data: rzOrder, error: rzErr } = await supabase.functions.invoke('create-razorpay-order', {
         body: { amount: totalAmount, receipt: `custom-${Date.now()}` }
       });
-      if (paymentDebug) {
-        console.info('[payment-debug] create-razorpay-order result', {
-          ok: !rzErr && !!rzOrder?.id,
-          error: rzErr?.message || null,
-          orderId: rzOrder?.id || null,
-          currency: rzOrder?.currency || null,
-          amount: rzOrder?.amount || null,
-        });
-      }
       if (rzErr || !rzOrder?.id) throw new Error('Failed to initialize payment');
 
       // 4. Open Razorpay
@@ -216,14 +206,6 @@ export default function CustomCase() {
                 table: 'custom_case_orders'
               }
             });
-            if (paymentDebug) {
-              console.info('[payment-debug] verify-razorpay-payment result', {
-                hasError: !!verifyRes.error,
-                errorMessage: verifyRes.error?.message || null,
-                data: verifyRes.data || null,
-                orderId: order.id,
-              });
-            }
 
             if (verifyRes.error) {
               const backendError = (verifyRes.data as any)?.error;
@@ -240,7 +222,6 @@ export default function CustomCase() {
             const waMessage = `New Custom Case Order! %0AOrder: ${updatedOrder?.order_number || ''}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${totalAmount}`;
             window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
           } catch (verifyErr: any) {
-            console.error('Verification error:', verifyErr);
             toast({ 
               title: 'Payment Verification Error', 
               description: 'Payment was received, but confirmation is pending. Please contact support with your payment ID.', 

@@ -10,35 +10,6 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   throw new Error('Missing Supabase env vars: set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_ANON_KEY).');
 }
 
-function mask(value?: string) {
-  if (!value) return null;
-  if (value.length <= 10) return `${value.slice(0, 3)}***`;
-  return `${value.slice(0, 8)}...${value.slice(-4)}`;
-}
-
-if (typeof window !== 'undefined') {
-  const debugEnv = new URLSearchParams(window.location.search).has('debug_env');
-  if (debugEnv) {
-    let urlHost: string | null = null;
-    try {
-      urlHost = new URL(SUPABASE_URL).host;
-    } catch {
-      urlHost = null;
-    }
-
-    // Safe debug output: never print full keys
-    console.info('[env-debug] Supabase/Vite env check', {
-      supabaseUrlPresent: !!SUPABASE_URL,
-      supabaseUrlHost: urlHost,
-      publishableKeyPresent: !!SUPABASE_PUBLISHABLE_KEY,
-      publishableKeyMasked: mask(SUPABASE_PUBLISHABLE_KEY),
-      publishableKeyLength: SUPABASE_PUBLISHABLE_KEY?.length || 0,
-      razorpayKeyPresent: !!import.meta.env.VITE_RAZORPAY_KEY_ID,
-      razorpayKeyMasked: mask(import.meta.env.VITE_RAZORPAY_KEY_ID),
-    });
-  }
-}
-
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 

@@ -15,9 +15,21 @@ const statusColors: Record<OrderStatus, string> = {
   cancelled: 'bg-destructive/20 text-destructive border-destructive/30',
 };
 
+interface CustomCaseOrder {
+  id: string;
+  order_number: string;
+  created_at: string;
+  status: string;
+  payment_status?: string | null;
+  price: number;
+  quantity?: number | null;
+  image_url?: string | null;
+}
+
 export default function OrdersTab() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [caseOrders, setCaseOrders] = useState<CustomCaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
@@ -27,13 +39,21 @@ export default function OrdersTab() {
   }, [user]);
 
   const fetchOrders = async () => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false });
+    const [ordersRes, caseOrdersRes] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false }),
+      (supabase
+        .from('custom_case_orders' as any)
+        .select('id, order_number, created_at, status, payment_status, price, quantity, image_url')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })) as any,
+    ]);
 
-    setOrders((data as unknown as Order[]) || []);
+    setOrders((ordersRes.data as unknown as Order[]) || []);
+    setCaseOrders((caseOrdersRes.data as CustomCaseOrder[]) || []);
     setLoading(false);
   };
 
@@ -56,7 +76,7 @@ export default function OrdersTab() {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
-  if (orders.length === 0) {
+  if (orders.length === 0 && caseOrders.length === 0) {
     return (
       <Card className="bg-card border-border">
         <CardContent className="flex flex-col items-center py-16 text-center">
@@ -109,6 +129,39 @@ export default function OrdersTab() {
           )}
         </Card>
       ))}
+
+      {caseOrders.length > 0 && (
+        <>
+          <h3 className="text-sm font-semibold text-muted-foreground pt-2">Custom Case Orders</h3>
+          {caseOrders.map((order) => (
+            <Card key={order.id} className="bg-card border-border">
+              <CardHeader className="py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-sm font-medium text-foreground">#{order.order_number}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{format(new Date(order.created_at), 'MMM d, yyyy')}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/30">{order.status}</Badge>
+                    <span className="font-semibold text-foreground">₹{Number(order.price).toLocaleString()}</span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="border-t border-border pt-4">
+                <div className="flex items-center gap-3">
+                  {order.image_url ? (
+                    <img src={order.image_url} alt="Custom case" className="w-12 h-12 rounded-md object-cover bg-secondary" />
+                  ) : null}
+                  <div className="text-sm text-muted-foreground">
+                    <p>Type: Custom Case</p>
+                    <p>Qty: {order.quantity || 1} • Payment: {order.payment_status || 'pending'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </>
+      )}
     </div>
   );
 }

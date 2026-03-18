@@ -39,6 +39,7 @@ import AdminBrands from "./pages/admin/AdminBrands";
 import AdminCustomCaseOrders from "./pages/admin/AdminCaseOrders";
 import CustomCase from "./pages/CustomCase";
 import Payment from "./pages/Payment";
+import ComingSoonCategory from "./pages/ComingSoonCategory";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminServiceRequests from "./pages/admin/AdminServiceRequests";
 import AdminReviews from "./pages/admin/AdminReviews";
@@ -63,6 +64,8 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/product/:slug" element={<ProductDetail />} />
+                    <Route path="/category/smart-watches" element={<ComingSoonCategory />} />
+                    <Route path="/category/earbuds" element={<ComingSoonCategory />} />
                     <Route path="/category/:slug" element={<Products />} />
                     <Route path="/account" element={<Account />} />
                     <Route path="/wishlist" element={<Wishlist />} />
