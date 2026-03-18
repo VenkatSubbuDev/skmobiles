@@ -225,7 +225,7 @@ export default function CustomCase() {
             console.error('Verification error:', verifyErr);
             toast({ 
               title: 'Payment Verification Error', 
-              description: verifyErr?.message || 'Your payment was successful but verification failed. Please contact support.', 
+              description: 'Payment was received, but confirmation is pending. Please contact support with your payment ID.', 
               variant: 'destructive' 
             });
           }
