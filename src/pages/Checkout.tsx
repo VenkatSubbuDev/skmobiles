@@ -261,9 +261,10 @@ export default function Checkout() {
 
     // Try to Pay with Razorpay if setup
     const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    const razorpayConfigured = !!razorpayKeyId && !razorpayKeyId.includes('XXXX');
     
     // Simulate real flow: only open razorpay if amount > 0
-    if (total > 0 && razorpayKeyId) {
+    if (total > 0 && razorpayConfigured) {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         toast({ title: 'Error', description: 'Razorpay SDK failed to load. Are you offline?', variant: 'destructive' });
@@ -348,7 +349,7 @@ export default function Checkout() {
           toast({ title: 'Payment unavailable', description: 'The payment gateway is currently misconfigured.', variant: 'destructive' });
         }
       }
-    } else if (total > 0 && !razorpayKeyId) {
+    } else if (total > 0 && !razorpayConfigured) {
       toast({ title: 'Demo Mode', description: 'Order placed, but payment gateway not configured. Please add VITE_RAZORPAY_KEY_ID to process real payments.' });
     }
 

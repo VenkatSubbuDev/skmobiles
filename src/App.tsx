@@ -38,6 +38,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminBrands from "./pages/admin/AdminBrands";
 import AdminCustomCaseOrders from "./pages/admin/AdminCaseOrders";
 import CustomCase from "./pages/CustomCase";
+import Payment from "./pages/Payment";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminServiceRequests from "./pages/admin/AdminServiceRequests";
 import AdminReviews from "./pages/admin/AdminReviews";
@@ -78,6 +79,7 @@ const App = () => (
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/cookies" element={<Cookies />} />
                     <Route path="/custom-case" element={<CustomCase />} />
+                    <Route path="/payment" element={<Payment />} />
                   </Route>
                   <Route path="/skadmin/login" element={<AdminLogin />} />
                   <Route path="/skadmin" element={<AdminLayout />}>

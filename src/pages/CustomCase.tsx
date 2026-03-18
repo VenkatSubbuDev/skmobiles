@@ -164,10 +164,11 @@ export default function CustomCase() {
       });
 
       const rzKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      const isRazorpayConfigured = !!rzKey && !rzKey.includes('XXXX');
       const rzReady = await loadRazorpay();
 
-      if (!rzKey || !rzReady) {
-        throw new Error('Payment gateway not available. Please try later.');
+      if (!isRazorpayConfigured || !rzReady) {
+        throw new Error('Payment gateway not configured. Please set a valid VITE_RAZORPAY_KEY_ID and try again.');
       }
 
       // 3. Create Razorpay Order via Edge Function
