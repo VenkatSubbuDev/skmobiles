@@ -53,8 +53,15 @@ serve(async (req) => {
     }
 
     // 2. Update Order Status in Database
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in function secrets' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const { error: updateError } = await supabase
@@ -71,7 +78,11 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Database update error:', updateError);
-      return new Response(JSON.stringify({ error: 'Failed to update order status' }), {
+      return new Response(JSON.stringify({
+        error: 'Failed to update order status',
+        details: updateError.message,
+        code: updateError.code,
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

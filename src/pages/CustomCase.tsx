@@ -207,7 +207,10 @@ export default function CustomCase() {
               }
             });
 
-            if (verifyRes.error) throw new Error(verifyRes.error.message || 'Verification failed');
+            if (verifyRes.error) {
+              const backendError = (verifyRes.data as any)?.error;
+              throw new Error(backendError || verifyRes.error.message || 'Verification failed');
+            }
 
             setOrderPlaced(true);
             // Fetch updated order for the final order number
@@ -222,7 +225,7 @@ export default function CustomCase() {
             console.error('Verification error:', verifyErr);
             toast({ 
               title: 'Payment Verification Error', 
-              description: 'Your payment was successful but verification failed. Please contact support.', 
+              description: verifyErr?.message || 'Your payment was successful but verification failed. Please contact support.', 
               variant: 'destructive' 
             });
           }

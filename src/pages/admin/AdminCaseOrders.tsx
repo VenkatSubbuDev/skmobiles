@@ -35,16 +35,22 @@ export default function AdminCaseOrders() {
   const { toast } = useToast();
 
   const fetchOrders = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('custom_case_orders')
-      .select('*, mobile_brands(name), mobile_models(name)')
+      .select('*, brands(name), models(name)')
       .order('created_at', { ascending: false });
+
+    if (error) {
+      toast({ title: 'Error loading case orders', description: error.message, variant: 'destructive' });
+      setLoading(false);
+      return;
+    }
 
     if (data) {
       setOrders(data.map((o: any) => ({
         ...o,
-        brand_name: o.mobile_brands?.name,
-        model_name: o.mobile_models?.name,
+        brand_name: o.brands?.name,
+        model_name: o.models?.name,
       })));
     }
     setLoading(false);
