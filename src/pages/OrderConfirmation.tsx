@@ -56,16 +56,21 @@ export default function OrderConfirmation() {
   const shippingAddr = order.shipping_address as unknown as Record<string, string> | null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="text-center mb-8 animate-fade-up">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--success))]/20 mb-4">
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center mb-6 animate-fade-up">
+        <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/20 blur-2xl" />
+        <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-[hsl(var(--success))]/20 blur-3xl" />
+        <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(var(--success))]/20 mb-4">
           <CheckCircle2 className="h-8 w-8 text-[hsl(var(--success))]" />
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Order Confirmed!</h1>
-        <p className="text-muted-foreground mt-2">Thank you for your order. We'll keep you updated.</p>
+        <h1 className="relative text-2xl md:text-3xl font-bold text-foreground">Order Confirmed!</h1>
+        <p className="relative text-muted-foreground mt-2">Thank you for your order. We'll keep you updated.</p>
+        <div className="relative mt-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs text-primary">
+          <span>Order #{order.order_number}</span>
+        </div>
       </div>
 
-      <Card className="bg-card border-border mb-6">
+      <Card className="bg-card border-border/70 shadow-lg mb-6">
         <CardContent className="pt-6 space-y-4">
           <div className="flex justify-between items-start">
             <div>
@@ -82,7 +87,7 @@ export default function OrderConfirmation() {
 
           <div className="space-y-3">
             {items.map(item => (
-              <div key={item.id} className="flex items-center gap-3">
+              <div key={item.id} className="flex items-center gap-3 rounded-lg border border-border/50 bg-secondary/20 p-3">
                 {item.product_image && (
                   <img src={item.product_image} alt={item.product_name} className="w-12 h-12 rounded-md object-cover bg-secondary" />
                 )}
@@ -125,7 +130,7 @@ export default function OrderConfirmation() {
         <Button asChild variant="outline" className="flex-1">
           <Link to="/account">View Orders <ArrowRight className="h-4 w-4 ml-1" /></Link>
         </Button>
-        <Button asChild className="flex-1">
+        <Button asChild className="flex-1 neon-glow">
           <Link to="/products">Continue Shopping</Link>
         </Button>
       </div>

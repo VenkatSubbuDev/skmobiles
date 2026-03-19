@@ -112,6 +112,24 @@ export default function CustomCase() {
 
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
+  const resetBuilder = () => {
+    setOrderPlaced(false);
+    setOrderNumber('');
+    setCurrentStep(1);
+    setSelectedBrand('');
+    setSelectedModel('');
+    setImageFile(null);
+    setImagePreview(null);
+    setCustomerName(user?.user_metadata?.full_name || '');
+    setCustomerEmail(user?.email || '');
+    setCustomerPhone('');
+    setAddress('');
+    setCity('');
+    setState('');
+    setPincode('');
+    setQuantity(1);
+  };
+
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -171,30 +189,29 @@ export default function CustomCase() {
         throw new Error('Payment gateway not configured. Please set a valid VITE_RAZORPAY_KEY_ID and try again.');
       }
 
-      // 3. Create Razorpay Order via Edge Function
-      const { data: rzOrder, error: rzErr } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { amount: totalAmount, receipt: `custom-${Date.now()}` }
+      // 3. Secure custom-case intent from backend
+      const { data: intent, error: intentErr } = await supabase.functions.invoke('create-custom-case-intent', {
+        body: {
+          brand_id: selectedBrand,
+          model_id: selectedModel,
+          image_url: publicUrl,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_email: customerEmail || null,
+          shipping_address: address,
+          city,
+          state,
+          pincode,
+          quantity,
+        }
       });
-      if (rzErr || !rzOrder?.id) throw new Error('Failed to initialize payment');
+      if (intentErr || !intent?.order_id || !intent?.razorpay_order?.id) throw new Error('Failed to initialize secure payment');
 
-      // 4. Open Razorpay
-      // 5. Create Order upfront as pending
-      const { data: order, error: orderErr } = await (supabase.from('custom_case_orders') as any).insert({
-        user_id: user.id, brand_id: selectedBrand, model_id: selectedModel, image_url: publicUrl,
-        customer_name: customerName, customer_phone: customerPhone, customer_email: customerEmail || null,
-        shipping_address: address, city, state, pincode, quantity, price: totalAmount,
-        payment_status: 'pending',
-        status: 'pending',
-        order_number: 'TEMP'
-      }).select().single();
-
-      if (orderErr) throw orderErr;
-
-      // 6. Finalize Verification on Success
+      // 4. Finalize Verification on Success
       const options = {
-        key: rzKey, amount: rzOrder.amount, currency: rzOrder.currency, name: 'SK Mobiles',
+        key: rzKey, amount: intent.razorpay_order.amount, currency: intent.razorpay_order.currency, name: 'SK Mobiles',
         description: `Custom Case for ${models.find(m => m.id === selectedModel)?.name}`,
-        order_id: rzOrder.id,
+        order_id: intent.razorpay_order.id,
         handler: async (response: any) => {
           try {
             const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
@@ -202,7 +219,7 @@ export default function CustomCase() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                order_id: order.id,
+                order_id: intent.order_id,
                 table: 'custom_case_orders'
               }
             });
@@ -214,12 +231,12 @@ export default function CustomCase() {
 
             setOrderPlaced(true);
             // Fetch updated order for the final order number
-            const { data: updatedOrder } = await (supabase.from('custom_case_orders') as any).select('order_number').eq('id', order.id).single();
-            setOrderNumber(updatedOrder?.order_number || order.id);
+            const { data: updatedOrder } = await (supabase.from('custom_case_orders') as any).select('order_number').eq('id', intent.order_id).single();
+            setOrderNumber(updatedOrder?.order_number || intent.order_id);
             toast({ title: '🎉 Order placed!', description: `Order ${updatedOrder?.order_number || ''} confirmed.` });
             
             // Trigger WhatsApp notification
-            const waMessage = `New Custom Case Order! %0AOrder: ${updatedOrder?.order_number || ''}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${totalAmount}`;
+            const waMessage = `New Custom Case Order! %0AOrder: ${updatedOrder?.order_number || ''}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${intent.total || totalAmount}`;
             window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
           } catch (verifyErr: any) {
             toast({ 
@@ -257,7 +274,7 @@ export default function CustomCase() {
               <p className="text-xl font-mono font-bold text-primary">{orderNumber}</p>
             </div>
             <p className="text-sm text-muted-foreground">We'll contact you on your phone number for order updates and payment confirmation.</p>
-            <Button onClick={() => { setOrderPlaced(false); setImageFile(null); setImagePreview(null); setCustomerName(''); setCustomerPhone(''); setAddress(''); setCity(''); setState(''); setPincode(''); setQuantity(1); }} className="w-full">
+            <Button onClick={resetBuilder} className="w-full">
               Design Another Case
             </Button>
           </CardContent>

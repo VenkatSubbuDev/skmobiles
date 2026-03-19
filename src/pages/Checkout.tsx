@@ -201,174 +201,130 @@ export default function Checkout() {
         }
       : null;
 
-    // Create order
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert([{
-        user_id: user!.id,
-        order_number: 'TEMP',
-        subtotal,
-        shipping_cost: shippingCost,
-        total,
+    // Secure checkout intent from server (server recalculates totals/prices)
+    const { data: intentData, error: intentError } = await supabase.functions.invoke('create-checkout-intent', {
+      body: {
+        items: items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })),
         delivery_method: deliveryMethod,
-        shipping_address: shippingAddr as any,
+        shipping_address: shippingAddr,
         notes: notes || null,
-        status: 'pending' as const,
-        payment_status: 'pending',
-        coupon_id: appliedCoupon ? appliedCoupon.id : null,
-        discount_amount: discountAmount
-      } as any])
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      toast({ title: 'Error', description: 'Failed to place order', variant: 'destructive' });
-      setPlacing(false);
-      return;
-    }
-
-    // Create order items
-    const orderItems = items.map(item => {
-      const product = item.product as Product;
-      return {
-        order_id: order.id,
-        product_id: item.product_id,
-        product_name: product?.name || 'Product',
-        product_image: product?.images?.[0] || null,
-        quantity: item.quantity,
-        price: product?.price || 0,
-      };
+        coupon_code: appliedCoupon?.code || couponCode || null,
+      },
     });
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
-    if (itemsError) {
-      toast({ title: 'Error', description: 'Order created but items failed to save', variant: 'destructive' });
+    if (intentError || !intentData?.order_id) {
+      toast({
+        title: 'Checkout failed',
+        description: intentData?.error || intentError?.message || 'Failed to initialize secure checkout',
+        variant: 'destructive',
+      });
       setPlacing(false);
       return;
     }
 
-    // Insert coupon usage if applied
-    if (appliedCoupon) {
-      await supabase.from('coupon_usage' as any).insert({
-        coupon_id: appliedCoupon.id,
-        user_id: user!.id,
-        order_id: order.id
-      });
-    }
+    const serverOrderId = intentData.order_id as string;
+    const serverOrderNumber = intentData.order_number as string;
+    const serverTotal = Number(intentData.total || 0);
 
     // Try to Pay with Razorpay if setup
     const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
     const razorpayConfigured = !!razorpayKeyId && !razorpayKeyId.includes('XXXX');
     
-    // Simulate real flow: only open razorpay if amount > 0
-    if (total > 0 && razorpayConfigured) {
+    if (serverTotal > 0 && razorpayConfigured) {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
         toast({ title: 'Error', description: 'Razorpay SDK failed to load. Are you offline?', variant: 'destructive' });
       } else {
-        // Option A: Hit the Edge Function we created:
-        try {
-          const res = await supabase.functions.invoke('create-razorpay-order', {
-            body: { amount: total, receipt: order.id }
-          });
-          
-          if (!res.error && res.data?.id) {
-            const options = {
-              key: razorpayKeyId,
-              amount: res.data.amount,
-              currency: res.data.currency,
-              name: 'SK Mobiles',
-              description: 'Purchase from SK Mobiles',
-              order_id: res.data.id,
-              handler: async function (response: any) {
-                // Securely verify payment on the backend
-                try {
-                  const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
-                    body: {
-                      razorpay_order_id: response.razorpay_order_id,
-                      razorpay_payment_id: response.razorpay_payment_id,
-                      razorpay_signature: response.razorpay_signature,
-                      order_id: order.id,
-                      table: 'orders'
-                    }
-                  });
-
-                  if (verifyRes.error) {
-                    throw new Error(verifyRes.error.message || 'Payment verification failed');
-                  }
-                  
-                  // Send confirmation email after verified payment
-                  try {
-                    await supabase.functions.invoke('send-order-email', {
-                      body: { 
-                        email: user?.email, 
-                        orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
-                        total: total 
-                      }
-                    });
-                  } catch (emailErr) {
-                    console.error('Failed to send confirmation email', emailErr);
-                  }
-
-                  await clearCart();
-                  navigate(`/order-confirmation/${order.id}`);
-                } catch (verifyErr: any) {
-                  console.error('Verification error:', verifyErr);
-                  toast({ 
-                    title: 'Payment Verification Error', 
-                    description: 'Your payment was successful but verification failed. Please contact support with your Payment ID.', 
-                    variant: 'destructive' 
-                  });
-                }
-              },
-              prefill: {
-                name: shippingAddr?.full_name || user?.user_metadata?.full_name || '',
-                email: user?.email || '',
-                contact: shippingAddr?.phone || '',
-              },
-              theme: { color: '#0ea5e9' },
-            };
-            const rzp = new window.Razorpay(options);
-            
-            rzp.on('payment.failed', function (response: any) {
-              toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
-            });
-            
-            rzp.open();
-            setPlacing(false);
-            return; // don't navigate yet, wait for razorpay success
-          } else {
-            console.error('Edge function error:', res.error || res.data?.error);
-            toast({ title: 'Payment Setup Error', description: 'Please make sure Razorpay Secret is set in Supabase Edge Functions.', variant: 'destructive' });
-          }
-        } catch (err) {
-          console.error('Failed to invoke razorpay function', err);
-          toast({ title: 'Payment unavailable', description: 'The payment gateway is currently misconfigured.', variant: 'destructive' });
+        const razorpayOrder = intentData.razorpay_order;
+        if (!razorpayOrder?.id) {
+          toast({ title: 'Payment Setup Error', description: 'Secure payment order could not be initialized.', variant: 'destructive' });
+          setPlacing(false);
+          return;
         }
+
+        const options = {
+          key: razorpayKeyId,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency || 'INR',
+          name: 'SK Mobiles',
+          description: 'Purchase from SK Mobiles',
+          order_id: razorpayOrder.id,
+          handler: async function (response: any) {
+            try {
+              const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
+                body: {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  order_id: serverOrderId,
+                  table: 'orders'
+                }
+              });
+
+              if (verifyRes.error) {
+                throw new Error(verifyRes.error.message || 'Payment verification failed');
+              }
+
+              try {
+                await supabase.functions.invoke('send-order-email', {
+                  body: {
+                    email: user?.email,
+                    orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
+                    total: serverTotal
+                  }
+                });
+              } catch {
+                // Don't block order completion on email errors
+              }
+
+              await clearCart();
+              navigate(`/order-confirmation/${serverOrderId}`);
+            } catch {
+              toast({
+                title: 'Payment Verification Error',
+                description: 'Your payment was successful but verification failed. Please contact support with your Payment ID.',
+                variant: 'destructive'
+              });
+            } finally {
+              setPlacing(false);
+            }
+          },
+          prefill: {
+            name: shippingAddr?.full_name || user?.user_metadata?.full_name || '',
+            email: user?.email || '',
+            contact: shippingAddr?.phone || '',
+          },
+          theme: { color: '#0ea5e9' },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
+          setPlacing(false);
+        });
+        rzp.open();
+        return;
       }
-    } else if (total > 0 && !razorpayConfigured) {
-      toast({ title: 'Demo Mode', description: 'Order placed, but payment gateway not configured. Please add VITE_RAZORPAY_KEY_ID to process real payments.' });
+    } else if (serverTotal > 0 && !razorpayConfigured) {
+      toast({ title: 'Payment unavailable', description: 'Payment gateway not configured.', variant: 'destructive' });
+      setPlacing(false);
+      return;
     }
 
-    // Fallback or Free Order
+    // Free order flow (if server total is zero)
     try {
       await supabase.functions.invoke('send-order-email', {
-        body: { 
-          email: user?.email, 
-          orderNumber: order.order_number === 'TEMP' ? order.id.slice(0, 8).toUpperCase() : order.order_number, 
-          total: total 
+        body: {
+          email: user?.email,
+          orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
+          total: serverTotal
         }
       });
-    } catch (emailErr) {
-      console.error('Failed to send confirmation email', emailErr);
-    }
+    } catch {}
 
     await clearCart();
     setPlacing(false);
-    navigate(`/order-confirmation/${order.id}`);
+    navigate(`/order-confirmation/${serverOrderId}`);
   };
 
   if (authLoading || loadingAddresses) {

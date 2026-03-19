@@ -133,7 +133,7 @@ export default function AdminCaseOrders() {
       </div>
 
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Order Details — {selectedOrder?.order_number}</DialogTitle></DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
