@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseFunctionHeaders, supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
@@ -202,7 +202,9 @@ export default function Checkout() {
       : null;
 
     // Secure checkout intent from server (server recalculates totals/prices)
+    const functionHeaders = await getSupabaseFunctionHeaders();
     const { data: intentData, error: intentError } = await supabase.functions.invoke('create-checkout-intent', {
+      headers: functionHeaders,
       body: {
         items: items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })),
         delivery_method: deliveryMethod,
@@ -213,6 +215,12 @@ export default function Checkout() {
     });
 
     if (intentError || !intentData?.order_id) {
+      console.error('Checkout secure intent failed', {
+        hasAuthorizationHeader: !!functionHeaders.Authorization,
+        hasApiKeyHeader: !!functionHeaders.apikey,
+        intentError,
+        intentData,
+      });
       toast({
         title: 'Checkout failed',
         description: intentData?.error || intentError?.message || 'Failed to initialize secure checkout',

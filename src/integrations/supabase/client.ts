@@ -20,3 +20,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+export const getSupabaseFunctionHeaders = async () => {
+  const { data } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {
+    apikey: SUPABASE_PUBLISHABLE_KEY,
+  };
+
+  if (data.session?.access_token) {
+    headers.Authorization = `Bearer ${data.session.access_token}`;
+  }
+
+  return headers;
+};

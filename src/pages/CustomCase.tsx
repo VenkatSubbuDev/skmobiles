@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseFunctionHeaders, supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -190,7 +190,9 @@ export default function CustomCase() {
       }
 
       // 3. Secure custom-case intent from backend
+      const functionHeaders = await getSupabaseFunctionHeaders();
       const { data: intent, error: intentErr } = await supabase.functions.invoke('create-custom-case-intent', {
+        headers: functionHeaders,
         body: {
           brand_id: selectedBrand,
           model_id: selectedModel,
@@ -205,7 +207,15 @@ export default function CustomCase() {
           quantity,
         }
       });
-      if (intentErr || !intent?.order_id || !intent?.razorpay_order?.id) throw new Error('Failed to initialize secure payment');
+      if (intentErr || !intent?.order_id || !intent?.razorpay_order?.id) {
+        console.error('Custom case secure intent failed', {
+          hasAuthorizationHeader: !!functionHeaders.Authorization,
+          hasApiKeyHeader: !!functionHeaders.apikey,
+          intentError: intentErr,
+          intentData: intent,
+        });
+        throw new Error('Failed to initialize secure payment');
+      }
 
       // 4. Finalize Verification on Success
       const options = {
