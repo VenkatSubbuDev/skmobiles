@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import usePageMeta from '@/hooks/usePageMeta';
 import { cn } from '@/lib/utils';
-import { Upload, Smartphone, ImageIcon, ShieldCheck, CheckCircle2, IndianRupee, MapPin, Phone, Loader2 } from 'lucide-react';
+import { Upload, Smartphone, ImageIcon, ShieldCheck, CheckCircle2, IndianRupee, MapPin, Phone, Loader2, Sparkles, ArrowRight } from 'lucide-react';
 
 declare global { interface Window { Razorpay: any; } }
 
@@ -48,6 +48,7 @@ export default function CustomCase() {
   const [pincode, setPincode] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [finalizingPayment, setFinalizingPayment] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
@@ -207,15 +208,7 @@ export default function CustomCase() {
           quantity,
         }
       });
-      if (intentErr || !intent?.order_id || !intent?.razorpay_order?.id) {
-        console.error('Custom case secure intent failed', {
-          hasAuthorizationHeader: !!functionHeaders.Authorization,
-          hasApiKeyHeader: !!functionHeaders.apikey,
-          intentError: intentErr,
-          intentData: intent,
-        });
-        throw new Error('Failed to initialize secure payment');
-      }
+      if (intentErr || !intent?.order_id || !intent?.razorpay_order?.id) throw new Error('Failed to initialize secure payment');
 
       // 4. Finalize Verification on Success
       const options = {
@@ -223,6 +216,7 @@ export default function CustomCase() {
         description: `Custom Case for ${models.find(m => m.id === selectedModel)?.name}`,
         order_id: intent.razorpay_order.id,
         handler: async (response: any) => {
+          setFinalizingPayment(true);
           try {
             const verifyRes = await supabase.functions.invoke('verify-razorpay-payment', {
               body: {
@@ -239,21 +233,23 @@ export default function CustomCase() {
               throw new Error(backendError || verifyRes.error.message || 'Verification failed');
             }
 
+            const confirmedOrderNumber = intent.order_number || intent.order_id;
+            setOrderNumber(confirmedOrderNumber);
             setOrderPlaced(true);
-            // Fetch updated order for the final order number
-            const { data: updatedOrder } = await (supabase.from('custom_case_orders') as any).select('order_number').eq('id', intent.order_id).single();
-            setOrderNumber(updatedOrder?.order_number || intent.order_id);
-            toast({ title: '🎉 Order placed!', description: `Order ${updatedOrder?.order_number || ''} confirmed.` });
+            toast({ title: 'Order placed!', description: `Order ${confirmedOrderNumber} confirmed.` });
             
-            // Trigger WhatsApp notification
-            const waMessage = `New Custom Case Order! %0AOrder: ${updatedOrder?.order_number || ''}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: ₹${intent.total || totalAmount}`;
-            window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
+            const waMessage = `New Custom Case Order! %0AOrder: ${confirmedOrderNumber}%0AModel: ${models.find(m => m.id === selectedModel)?.name}%0AAmount: Rs.${intent.total || totalAmount}`;
+            window.setTimeout(() => {
+              window.open(`https://wa.me/918688575044?text=${waMessage}`, '_blank');
+            }, 250);
           } catch (verifyErr: any) {
             toast({ 
               title: 'Payment Verification Error', 
               description: 'Payment was received, but confirmation is pending. Please contact support with your payment ID.', 
               variant: 'destructive' 
             });
+          } finally {
+            setFinalizingPayment(false);
           }
         },
         prefill: { name: customerName, email: customerEmail, contact: customerPhone },
@@ -264,6 +260,7 @@ export default function CustomCase() {
       rzp.open();
     } catch (err: any) {
       toast({ title: 'Order Failed', description: err.message, variant: 'destructive' });
+      setFinalizingPayment(false);
     } finally {
       setSubmitting(false);
     }
@@ -272,21 +269,52 @@ export default function CustomCase() {
   if (orderPlaced) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full glass border-primary/30 text-center">
-          <CardContent className="p-8 space-y-4">
-            <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-primary" />
+        <Card className="max-w-2xl w-full overflow-hidden border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 text-center shadow-2xl shadow-primary/10">
+          <CardContent className="p-0">
+            <div className="relative overflow-hidden border-b border-primary/10 px-8 py-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.16),_transparent_30%)]" />
+              <div className="relative w-24 h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center ring-8 ring-primary/5">
+                <CheckCircle2 className="w-12 h-12 text-primary" />
+              </div>
+              <div className="relative mt-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                Custom Order Locked In
+              </div>
+              <h2 className="relative mt-4 text-3xl font-bold gradient-text">Order Confirmed!</h2>
+              <p className="relative mt-3 text-base text-muted-foreground">Your custom case has moved into production and the confirmation reached our system successfully.</p>
             </div>
-            <h2 className="text-2xl font-bold gradient-text">Order Confirmed!</h2>
-            <p className="text-muted-foreground">Your custom case is being prepared</p>
-            <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground">Order Number</p>
-              <p className="text-xl font-mono font-bold text-primary">{orderNumber}</p>
+
+            <div className="grid gap-4 p-8 md:grid-cols-3">
+              <div className="rounded-2xl border border-border/60 bg-background/40 p-4 text-left">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Order Number</p>
+                <p className="mt-3 text-2xl font-mono font-bold text-primary break-all">{orderNumber}</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-background/40 p-4 text-left">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Payment</p>
+                <p className="mt-3 text-lg font-semibold text-foreground">Paid securely</p>
+                <p className="mt-1 text-sm text-muted-foreground">Verified with Razorpay</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-background/40 p-4 text-left">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Next Update</p>
+                <p className="mt-3 text-lg font-semibold text-foreground">Phone or WhatsApp</p>
+                <p className="mt-1 text-sm text-muted-foreground">We will contact you with progress</p>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">We'll contact you on your phone number for order updates and payment confirmation.</p>
-            <Button onClick={resetBuilder} className="w-full">
-              Design Another Case
-            </Button>
+
+            <div className="px-8 pb-8">
+              <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-5 py-4 text-sm text-muted-foreground">
+                Design another case anytime. Your current order is safely stored in your profile and admin dashboard.
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button onClick={resetBuilder} className="flex-1">
+                  Design Another Case
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => navigate('/account')}>
+                  View My Orders
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -295,6 +323,21 @@ export default function CustomCase() {
 
   return (
     <div className="min-h-screen">
+      {finalizingPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-md border-primary/30 bg-card/95 shadow-2xl shadow-primary/10">
+            <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-foreground">Finalizing your order</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Payment is done. We are verifying it and preparing your confirmation now.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {/* Header Section */}
       <div className="bg-gradient-to-br from-background via-card to-background py-12 px-4">
         <div className="container mx-auto text-center max-w-2xl px-4">
@@ -547,4 +590,10 @@ export default function CustomCase() {
     </div>
   );
 }
+
+
+
+
+
+
 

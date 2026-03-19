@@ -215,12 +215,6 @@ export default function Checkout() {
     });
 
     if (intentError || !intentData?.order_id) {
-      console.error('Checkout secure intent failed', {
-        hasAuthorizationHeader: !!functionHeaders.Authorization,
-        hasApiKeyHeader: !!functionHeaders.apikey,
-        intentError,
-        intentData,
-      });
       toast({
         title: 'Checkout failed',
         description: intentData?.error || intentError?.message || 'Failed to initialize secure checkout',
@@ -272,18 +266,15 @@ export default function Checkout() {
               if (verifyRes.error) {
                 throw new Error(verifyRes.error.message || 'Payment verification failed');
               }
-
-              try {
-                await supabase.functions.invoke('send-order-email', {
-                  body: {
-                    email: user?.email,
-                    orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
-                    total: serverTotal
-                  }
-                });
-              } catch {
+              void supabase.functions.invoke('send-order-email', {
+                body: {
+                  email: user?.email,
+                  orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
+                  total: serverTotal
+                }
+              }).catch(() => {
                 // Don't block order completion on email errors
-              }
+              });
 
               await clearCart();
               navigate(`/order-confirmation/${serverOrderId}`);
@@ -320,15 +311,13 @@ export default function Checkout() {
     }
 
     // Free order flow (if server total is zero)
-    try {
-      await supabase.functions.invoke('send-order-email', {
-        body: {
-          email: user?.email,
-          orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
-          total: serverTotal
-        }
-      });
-    } catch {}
+    void supabase.functions.invoke('send-order-email', {
+      body: {
+        email: user?.email,
+        orderNumber: serverOrderNumber || serverOrderId.slice(0, 8).toUpperCase(),
+        total: serverTotal
+      }
+    }).catch(() => {});
 
     await clearCart();
     setPlacing(false);
@@ -601,3 +590,4 @@ export default function Checkout() {
     </div>
   );
 }
+

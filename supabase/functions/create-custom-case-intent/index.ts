@@ -123,6 +123,7 @@ serve(async (req) => {
     }
 
     const basicAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`)
+    const receipt = `cc-${order.id}`
     const razorpayRes = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -132,7 +133,8 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: Math.round(total * 100),
         currency: 'INR',
-        receipt: `custom-${order.id}`,
+        // Razorpay receipts must stay within 40 characters.
+        receipt,
       }),
     })
 
@@ -165,4 +167,6 @@ serve(async (req) => {
     })
   }
 })
+
+
 
